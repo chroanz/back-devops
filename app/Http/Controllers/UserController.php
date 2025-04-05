@@ -93,10 +93,15 @@ class UserController extends Controller
             }
             // Sei que tá duplicado, pretendo melhorar isso dps.
             $rules = [
-                "email" => "email|required",
                 "name" => "min:5|max:50|required",
-                "password" => "required"
+                "password" => "required",
+                "email" => "email|required"
             ];
+
+            if($request->method() === "PUT" || $request->method() === "PATCH")
+            {
+                array_pop($rules);
+            }
             $request->validate($rules);
             $user->update($request->all());
             return response()->json($user);
