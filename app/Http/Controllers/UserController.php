@@ -47,7 +47,7 @@ class UserController extends Controller
                 $user = $this->user->create($request->all());
                 if($user)
                 {
-                    return response()->json($user);
+                    return response()->json(["msg" => "User created successfully."], 200);
                 }
             }
             catch(Exception $e)
