@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -23,6 +27,30 @@ class UserController extends Controller
     {
         $users = $this->user->all();
         return response()->json($users);
+    }
+
+    /**
+     * Handle user login.
+     */
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
+
+        $user = $this->user->where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['msg' => 'Invalid credentials.'], 401);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'msg' => 'Login successful.',
+            'token' => $token
+        ], 200);
     }
 
     /**
@@ -125,5 +153,43 @@ class UserController extends Controller
         }
         $user->delete();
         return response()->json($user);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        Password::sendResetLink($request->only('email'));
+
+        return response()->json(status: Response::HTTP_OK);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|confirmed|min:8',
+            'token' => 'required|string'
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function (User $user, string $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                ])->setRememberToken(Str::random(60));
+                $user->save();
+            }
+        );
+
+        if($status == Password::PASSWORD_RESET)
+        {
+            return response()->json(status: Response::HTTP_OK);
+        }
+
+        return response()->json(status: Response::HTTP_BAD_REQUEST);
+
     }
 }

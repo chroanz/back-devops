@@ -16,7 +16,7 @@ class ResetPassword extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct(public string $url)
     {
         //
     }
@@ -27,7 +27,7 @@ class ResetPassword extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Reset Password',
+            subject: 'Redefinição de Senha',
         );
     }
 
@@ -37,7 +37,8 @@ class ResetPassword extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            view: 'emails.password-reset',
+            with:['url' => $this->url],
         );
     }
 
