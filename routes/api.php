@@ -10,10 +10,23 @@ use Illuminate\Auth\Events\PasswordReset;
 
 Route::apiResource("user", UserController::class);
 
-Route::get('cursos', [CursosController::class, 'index'])->name('cursos');
-Route::get('cursos/{id}', [CursosController::class, 'show'])->name('cursos.show');
-Route::get('cursos/search/{term}', [CursosController::class, 'search'])->name('cursos.search');
+Route::prefix('cursos')->group(function () {
+    Route::get('/', [CursosController::class, 'index']); 
+    Route::post('/create', [CursosController::class, 'store']); 
+    Route::get('/show/{curso}', [CursosController::class, 'show']); 
+    Route::put('/update/{curso}', [CursosController::class, 'update']);
+    Route::delete('/delete/{curso}', [CursosController::class, 'destroy']); 
+    Route::get('/search/{search}', [CursosController::class, 'search']);
+});
 
+// Route::prefix('aulas')->group(function () {
+//     Route::get('/', [CursosController::class, 'index']); 
+//     Route::post('/create', [CursosController::class, 'store']); 
+//     Route::get('/show/{aulas}', [CursosController::class, 'show']); 
+//     Route::put('/update/{aulas}', [CursosController::class, 'update']);
+//     Route::delete('/delete/{aulas}', [CursosController::class, 'destroy']); 
+//     Route::get('/search/{search}', [CursosController::class, 'search']);
+// });
 
 Route::post('login', [UserController::class, 'login'])->name('login');
 

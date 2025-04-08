@@ -29,7 +29,13 @@ class CursosController extends Controller
      */
     public function store(Request $request)
     {
-        
+        $validated = $request->validate([
+            'titulo' => 'required|string|max:255',
+            'descricao' => 'required|string',
+            'categoria' => 'required|string|max:255',
+        ]);
+        $curso = Cursos::create($validated);
+        return response()->json($curso, 201);
     }
 
     /**
@@ -58,16 +64,48 @@ class CursosController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Cursos $cursos)
+    public function update(Request $request, Cursos $curso)
     {
-        //
+    // Verifique se o modelo foi recuperado corretamente
+    if (!$curso || !$curso->exists) {
+        return response()->json(['error' => 'Curso não encontrado'], 404);
     }
+
+    // Veja os dados que estão chegando
+    $requestData = $request->all();
+    
+    $validated = $request->validate([
+        'titulo' => 'sometimes|required|string|max:255',
+        'descricao' => 'sometimes|required|string',
+        'categoria' => 'sometimes|required|string|max:255',
+    ]);
+    
+    // Salve os valores antigos para comparação
+    $oldValues = $curso->toArray();
+    
+    // Tente atualizar de forma explícita
+    $curso->titulo = $validated['titulo'] ?? $curso->titulo;
+    $curso->descricao = $validated['descricao'] ?? $curso->descricao;
+    $curso->categoria = $validated['categoria'] ?? $curso->categoria;
+    
+    // Force a atualização
+    $saved = $curso->save();
+    
+    return response()->json([
+        'success' => $saved,
+        'old_values' => $oldValues,
+        'new_values' => $curso->fresh()->toArray(),
+        'request_data' => $requestData,
+        'validated_data' => $validated
+    ]);
+    }  
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Cursos $cursos)
+    public function destroy(Cursos $curso)
     {
-        //
+        $curso->delete();
+        return response()->json(null, 204);
     }
 }
