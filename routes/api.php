@@ -19,6 +19,11 @@ Route::prefix('cursos')->group(function () {
     Route::get('/search/{search}', [CursosController::class, 'search']);
 });
 
+Route::prefix('admin')->group(function () {
+    Route::post('/store', [UserController::class, 'storeAdmin']);
+    Route::put('/update', [UserController::class, 'updateAdmin']);
+});
+
 // Route::prefix('aulas')->group(function () {
 //     Route::get('/', [CursosController::class, 'index']); 
 //     Route::post('/create', [CursosController::class, 'store']); 

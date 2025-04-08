@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserFunction;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -13,12 +14,14 @@ use Illuminate\Support\Str;
 class UserController extends Controller
 {
     protected User $user;
+    protected UserFunction $uf;
 
     // Fazendo a injeção de dependência no construtor
     // Prefiro trabalhar dessa forma
     public function __construct()
     {
         $this->user = new User();
+        $this->uf = new UserFunction();
     }
     /**
      * Display a listing of the resource.
@@ -73,7 +76,10 @@ class UserController extends Controller
                 
                 $request->validate($rules);
                 $user = $this->user->create($request->all());
-                if($user)
+                if($user && $this->uf->create([
+                    'user_id' => $user->id,
+                    'function' => 'default'
+                 ]))
                 {
                     return response()->json(["msg" => "User created successfully."], 200);
                 }
@@ -82,6 +88,40 @@ class UserController extends Controller
             {
                 return response()->json(["msg" => $e->getMessage()], 422);
             }
+    }
+
+    public function storeAdmin(Request $request)
+    {
+           // regras de validação de campos
+           try
+           {
+               $rules = [
+                   "email" => "email|required",
+                   "name" => "min:5|max:50|required",
+                   "password" => "required"
+               ];
+               $feedback = [
+                   // Irei definir posteriormente
+               ];
+               
+               $request->validate($rules);
+               $user = $this->user->create($request->all());
+               
+               $functionModel = new UserFunction();
+               
+
+               if($user && $functionModel->create([
+                  'user_id' => $user->id,
+                  'function' => 'admin'
+               ]))
+               {
+                   return response()->json(["msg" => "Admin user created successfully."], 200);
+               }
+           }
+           catch(Exception $e)
+           {
+               return response()->json(["msg" => $e->getMessage()], 422);
+           }
     }
 
     /**
@@ -151,6 +191,7 @@ class UserController extends Controller
         {
             return response()->json(["msg" => "Resource not found."], 404);
         }
+        $this->uf->where("user_id", $user->id)->delete();
         $user->delete();
         return response()->json($user);
     }
@@ -191,5 +232,51 @@ class UserController extends Controller
 
         return response()->json(status: Response::HTTP_BAD_REQUEST);
 
+    }
+
+    public function updateAdmin(Request $request)
+    {
+        try
+        {
+            $user = $this->user->find($request->id);
+            if(!$user)
+            {
+                return response()->json(["msg" => "Resource not found."], 404);
+            }
+            // Sei que tá duplicado, pretendo melhorar isso dps.
+            $rules = [
+                "id" => "required",
+                "name" => "min:5|max:50|required",
+                "password" => "required",
+                "email" => "email|required",
+                "function" => "required|min:5|max:10"
+            ];
+
+            if($request->method() === "PUT" || $request->method() === "PATCH")
+            {
+                array_pop($rules);
+            }
+            
+            $request->validate($rules);
+
+            $uf = (object) [
+                "user_id" => $request->id,
+                "function" => $request->function
+            ];
+
+            (new UserFunction())->where("user_id", $uf->user_id)->update(["function" => $uf->function]);
+
+            $request->request->remove('id');
+            $request->request->remove('function');
+
+            $user->update($request->all());
+
+            return response()->json(status: 200);
+            
+        }
+        catch(Exception $e)
+        {
+            return response()->json(["msg" => $e->getMessage()], 422);
+        }
     }
 }
