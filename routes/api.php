@@ -22,6 +22,7 @@ Route::prefix('cursos')->group(function () {
 Route::prefix('admin')->group(function () {
     Route::post('/store', [UserController::class, 'storeAdmin']);
     Route::put('/update', [UserController::class, 'updateAdmin']);
+    Route::get('/list', [UserController::class, 'getAdmins']);
 });
 
 // Route::prefix('aulas')->group(function () {

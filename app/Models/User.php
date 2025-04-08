@@ -51,6 +51,21 @@ class User extends Authenticatable
         ];
     }
 
+    public function functions()
+    {
+        return $this->hasMany(UserFunction::class);
+    }
+
+    public function isAdmin()
+    {
+        return $this->functions()->where('function', 'admin')->exists();
+    }
+    
+    public function isDefault()
+    {
+        return $this->functions()->where('function', 'default')->exists();
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         $url = env('FRONTEND_URL') . '/recuperar-senha?token=' . $token . '&email=' . $this->email;

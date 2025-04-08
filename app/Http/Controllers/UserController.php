@@ -28,8 +28,14 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = $this->user->all();
+        $users = $this->uf->where('function', 'default')->with('user')->get();
         return response()->json($users);
+    }
+
+    public function getAdmins()
+    {
+        $admins = $this->uf->where('function', 'admin')->with('user')->get();
+        return response()->json($admins);
     }
 
     /**
