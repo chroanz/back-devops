@@ -8,15 +8,17 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
 
+Route::get('/user/me',[UserController::class, 'me'])->middleware('auth:sanctum');
 Route::apiResource("user", UserController::class);
 
 Route::prefix('cursos')->group(function () {
-    Route::get('/', [CursosController::class, 'index']); 
-    Route::post('/create', [CursosController::class, 'store']); 
-    Route::get('/show/{curso}', [CursosController::class, 'show']); 
+    Route::get('/', [CursosController::class, 'index']);
+    Route::post('/create', [CursosController::class, 'store']);
+    Route::get('/show/{curso}', [CursosController::class, 'show']);
     Route::put('/update/{curso}', [CursosController::class, 'update']);
-    Route::delete('/delete/{curso}', [CursosController::class, 'destroy']); 
+    Route::delete('/delete/{curso}', [CursosController::class, 'destroy']);
     Route::get('/search/{search}', [CursosController::class, 'search']);
+    Route::post('/subscribe/{cursos}', [CursosController::class, 'subscribe'])->middleware(['auth:sanctum']);
 });
 
 Route::prefix('admin')->group(function () {
@@ -26,11 +28,11 @@ Route::prefix('admin')->group(function () {
 });
 
 // Route::prefix('aulas')->group(function () {
-//     Route::get('/', [CursosController::class, 'index']); 
-//     Route::post('/create', [CursosController::class, 'store']); 
-//     Route::get('/show/{aulas}', [CursosController::class, 'show']); 
+//     Route::get('/', [CursosController::class, 'index']);
+//     Route::post('/create', [CursosController::class, 'store']);
+//     Route::get('/show/{aulas}', [CursosController::class, 'show']);
 //     Route::put('/update/{aulas}', [CursosController::class, 'update']);
-//     Route::delete('/delete/{aulas}', [CursosController::class, 'destroy']); 
+//     Route::delete('/delete/{aulas}', [CursosController::class, 'destroy']);
 //     Route::get('/search/{search}', [CursosController::class, 'search']);
 // });
 

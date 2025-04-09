@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Cursos;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Cursos;
+use Illuminate\Support\Facades\Log;
 
 class CursosController extends Controller
 {
@@ -53,7 +55,7 @@ class CursosController extends Controller
     public function search(string $search)
     {
         $search = htmlspecialchars(strip_tags($search));
-        
+
         $cursos = $this->cursos->getByParam($search);
 
         return !empty($cursos)
@@ -66,39 +68,39 @@ class CursosController extends Controller
      */
     public function update(Request $request, Cursos $curso)
     {
-    // Verifique se o modelo foi recuperado corretamente
-    if (!$curso || !$curso->exists) {
-        return response()->json(['error' => 'Curso não encontrado'], 404);
-    }
+        // Verifique se o modelo foi recuperado corretamente
+        if (!$curso || !$curso->exists) {
+            return response()->json(['error' => 'Curso não encontrado'], 404);
+        }
 
-    // Veja os dados que estão chegando
-    $requestData = $request->all();
-    
-    $validated = $request->validate([
-        'titulo' => 'sometimes|required|string|max:255',
-        'descricao' => 'sometimes|required|string',
-        'categoria' => 'sometimes|required|string|max:255',
-    ]);
-    
-    // Salve os valores antigos para comparação
-    $oldValues = $curso->toArray();
-    
-    // Tente atualizar de forma explícita
-    $curso->titulo = $validated['titulo'] ?? $curso->titulo;
-    $curso->descricao = $validated['descricao'] ?? $curso->descricao;
-    $curso->categoria = $validated['categoria'] ?? $curso->categoria;
-    
-    // Force a atualização
-    $saved = $curso->save();
-    
-    return response()->json([
-        'success' => $saved,
-        'old_values' => $oldValues,
-        'new_values' => $curso->fresh()->toArray(),
-        'request_data' => $requestData,
-        'validated_data' => $validated
-    ]);
-    }  
+        // Veja os dados que estão chegando
+        $requestData = $request->all();
+
+        $validated = $request->validate([
+            'titulo' => 'sometimes|required|string|max:255',
+            'descricao' => 'sometimes|required|string',
+            'categoria' => 'sometimes|required|string|max:255',
+        ]);
+
+        // Salve os valores antigos para comparação
+        $oldValues = $curso->toArray();
+
+        // Tente atualizar de forma explícita
+        $curso->titulo = $validated['titulo'] ?? $curso->titulo;
+        $curso->descricao = $validated['descricao'] ?? $curso->descricao;
+        $curso->categoria = $validated['categoria'] ?? $curso->categoria;
+
+        // Force a atualização
+        $saved = $curso->save();
+
+        return response()->json([
+            'success' => $saved,
+            'old_values' => $oldValues,
+            'new_values' => $curso->fresh()->toArray(),
+            'request_data' => $requestData,
+            'validated_data' => $validated
+        ]);
+    }
 
     /**
      * Remove the specified resource from storage.
@@ -107,5 +109,26 @@ class CursosController extends Controller
     {
         $curso->delete();
         return response()->json(null, 204);
+    }
+
+    public function subscribe(Cursos $cursos)
+    {
+        /**
+         * @var User $user
+         */
+        $user = auth()->user();
+
+        // Verifica se o usuário já está matriculado no curso
+        if ($user->cursos()->where('cursos_id', $cursos->id)->exists()) {
+            return response()->json([
+                'msg' => 'Usuário já está matriculado neste curso'
+            ], 400);
+        }
+
+        $user->cursos()->attach($cursos->id);
+
+        return response()->json([
+            'msg' => 'Matrícula realizada com sucesso'
+        ], 201);
     }
 }

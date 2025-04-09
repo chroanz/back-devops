@@ -68,7 +68,7 @@ class User extends Authenticatable
     }
 
     public function cursos(): BelongsToMany{
-        return $this->belongsToMany(Cursos::class);
+        return $this->belongsToMany(Cursos::class, 'cursos_user', 'user_id', 'cursos_id')->withTimestamps();
     }
 
     public function sendPasswordResetNotification($token): void

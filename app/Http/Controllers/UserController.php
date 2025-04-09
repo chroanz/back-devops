@@ -67,7 +67,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        
+
             // regras de validação de campos
             try
             {
@@ -79,7 +79,7 @@ class UserController extends Controller
                 $feedback = [
                     // Irei definir posteriormente
                 ];
-                
+
                 $request->validate($rules);
                 $user = $this->user->create($request->all());
                 if($user && $this->uf->create([
@@ -109,12 +109,12 @@ class UserController extends Controller
                $feedback = [
                    // Irei definir posteriormente
                ];
-               
+
                $request->validate($rules);
                $user = $this->user->create($request->all());
-               
+
                $functionModel = new UserFunction();
-               
+
 
                if($user && $functionModel->create([
                   'user_id' => $user->id,
@@ -179,7 +179,7 @@ class UserController extends Controller
             $request->validate($rules);
             $user->update($request->all());
             return response()->json($user);
-            
+
         }
         catch(Exception $e)
         {
@@ -262,7 +262,7 @@ class UserController extends Controller
             {
                 array_pop($rules);
             }
-            
+
             $request->validate($rules);
 
             $uf = (object) [
@@ -278,11 +278,16 @@ class UserController extends Controller
             $user->update($request->all());
 
             return response()->json(status: 200);
-            
+
         }
         catch(Exception $e)
         {
             return response()->json(["msg" => $e->getMessage()], 422);
         }
+    }
+
+    public function me(){
+        $user = auth()->user();
+        return response()->json($user, 200);
     }
 }
