@@ -8,6 +8,7 @@ use App\Mail\ResetPassword;
 use App\Notifications\ResetPasswordNotification;
 use Illuminate\Contracts\Auth\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -60,16 +61,20 @@ class User extends Authenticatable
     {
         return $this->functions()->where('function', 'admin')->exists();
     }
-    
+
     public function isDefault()
     {
         return $this->functions()->where('function', 'default')->exists();
     }
 
+    public function cursos(): BelongsToMany{
+        return $this->belongsToMany(Cursos::class);
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         $url = env('FRONTEND_URL') . '/recuperar-senha?token=' . $token . '&email=' . $this->email;
-        $this->notify(new ResetPasswordNotification($url));    
+        $this->notify(new ResetPasswordNotification($url));
     }
 
 }
