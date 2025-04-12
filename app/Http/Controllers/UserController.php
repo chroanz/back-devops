@@ -10,8 +10,9 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
-class UserController extends Controller
+class UserController extends Controller 
 {
     protected User $user;
     protected UserFunction $uf;
@@ -41,27 +42,42 @@ class UserController extends Controller
     /**
      * Handle user login.
      */
+    // public function login(Request $request)
+    // {
+    //     $request->validate([
+    //         'email' => 'required|email',
+    //         'password' => 'required'
+    //     ]);
+
+    //     $user = $this->user->where('email', $request->email)->first();
+
+    //     if (!$user || !Hash::check($request->password, $user->password)) {
+    //         return response()->json(['msg' => 'Invalid credentials.'], 401);
+    //     }
+
+    //     $token = $user->createToken('auth_token')->plainTextToken;
+
+    //     return response()->json([
+    //         'msg' => 'Login successful.',
+    //         'token' => $token
+    //     ], 200);
+    // }
+
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
+        $credentials = $request->only('email', 'password');
 
-        $user = $this->user->where('email', $request->email)->first();
-
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['msg' => 'Invalid credentials.'], 401);
+        if (!$token = JWTAuth::attempt($credentials)) {
+            return response()->json(['msg' => 'Credenciais inválidas'], 401);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return response()->json([
-            'msg' => 'Login successful.',
-            'token' => $token
-        ], 200);
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60
+        ]);
+        
     }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -286,8 +302,14 @@ class UserController extends Controller
         }
     }
 
-    public function me(){
-        $user = auth()->user();
-        return response()->json($user, 200);
+    // public function me(){
+    //     $user = auth()->user();
+    //     return response()->json($user, 200);
+    // }
+
+    public function me()
+    {
+        return response()->json(auth()->user());
     }
+
 }

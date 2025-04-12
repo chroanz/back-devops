@@ -41,3 +41,9 @@ Route::post('login', [UserController::class, 'login'])->name('login');
 
 Route::post('forgot-password', [UserController::class, 'forgotPassword'])->name('forgot.password');
 Route::post('reset-password', [UserController::class, 'resetPassword'])->name('password.reset');
+
+Route::middleware(['auth:api'])->group(function () {
+    Route::get('/user/me', [UserController::class, 'me']);
+    Route::post('/logout', [UserController::class, 'logout']);
+    // outras rotas protegidas
+});
