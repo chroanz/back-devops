@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CursosController;
+use App\Http\Controllers\AulasController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -27,14 +28,14 @@ Route::prefix('admin')->group(function () {
     Route::get('/list', [UserController::class, 'getAdmins']);
 });
 
-// Route::prefix('aulas')->group(function () {
-//     Route::get('/', [CursosController::class, 'index']);
-//     Route::post('/create', [CursosController::class, 'store']);
-//     Route::get('/show/{aulas}', [CursosController::class, 'show']);
-//     Route::put('/update/{aulas}', [CursosController::class, 'update']);
-//     Route::delete('/delete/{aulas}', [CursosController::class, 'destroy']);
-//     Route::get('/search/{search}', [CursosController::class, 'search']);
-// });
+Route::prefix('aulas')->group(function () {
+    Route::get('/', [AulasController::class, 'index']); 
+    Route::post('/create', [AulasController::class, 'store']); 
+    Route::get('/show/{aulas}', [AulasController::class, 'show']); 
+    Route::put('/update/{aulas}', [AulasController::class, 'update']);
+    Route::delete('/delete/{aulas}', [AulasController::class, 'destroy']); 
+    Route::get('/search/{search}', [AulasController::class, 'search']);
+});
 
 Route::post('login', [UserController::class, 'login'])->name('login');
 
