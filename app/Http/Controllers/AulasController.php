@@ -82,9 +82,10 @@ class AulasController extends Controller
         }
     }
 
-    public function update(Request $request, Aulas $aula)
+    public function update(Request $request, int $id)
     {
         try {
+            $aula = $this->aulas->find($id);
             if (!$aula || !$aula->exists) {
                 return response()->json(['error' => 'Aula não encontrada.'], 404);
             }
@@ -115,8 +116,16 @@ class AulasController extends Controller
     public function destroy(Aulas $aula)
     {
         try {
+            if (!$aula || !$aula->exists) {
+                return response()->json(['error' => 'Aula não encontrada.'], 404);
+            }
+    
+            dd($aula); // Verifique se o modelo está carregado corretamente
+    
             $aula->delete();
-            return response()->json(['message' => 'Aula removida com sucesso.'], 204);
+            return response()->json(['message' => 'Aula removida com sucesso.'], 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json(['error' => 'Erro ao remover aula devido a restrições de banco de dados.', 'details' => $e->getMessage()], 500);
         } catch (Exception $e) {
             return response()->json(['error' => 'Erro ao remover aula.', 'details' => $e->getMessage()], 500);
         }
