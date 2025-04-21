@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             UsersSeeder::class,
             CursosSeeder::class,
             UserFunctionSeeder::class,
+            AulaSeeder::class,
+            LeituraSeeder::class,
         ]);
     }
 }

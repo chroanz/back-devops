@@ -23,7 +23,8 @@ class LeituraFactory extends Factory
             'curso_id' => fake()->randomElement($cursosId),
             'sequencia' => fake()->randomDigitNotZero(),
             'titulo' => fake()->sentence(),
-            'conteudo' => fake()->randomHtml(1,7),
+            'conteudo' => implode("", array_map(fn($paragraph) => "<p>$paragraph</p>",
+            fake()->paragraphs(5))),
         ];
     }
 }

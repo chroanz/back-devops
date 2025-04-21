@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Cursos;
-use Illuminate\Support\Facades\Log;
 
 class CursosController extends Controller
 {
@@ -22,7 +21,11 @@ class CursosController extends Controller
      */
     public function index()
     {
-        $cursos = $this->cursos->all();
+        $cursos = $this->cursos->with(['aulas' => function($query) {
+            $query->orderBy('sequencia');
+        }, 'leituras' => function($query) {
+            $query->orderBy('sequencia');
+        }])->get();
         return response()->json($cursos);
     }
 
@@ -116,7 +119,7 @@ class CursosController extends Controller
         /**
          * @var User $user
          */
-        $user = auth()->user();
+        $user = auth('api')->user();
 
         // Verifica se o usuário já está matriculado no curso
         if ($user->cursos()->where('cursos_id', $cursos->id)->exists()) {
@@ -130,5 +133,42 @@ class CursosController extends Controller
         return response()->json([
             'msg' => 'Matrícula realizada com sucesso'
         ], 201);
+    }
+
+    public function meusCursos(){
+        /**
+         * @var User $user
+         */
+        $user = auth('api')->user();
+        $cursos = $user->cursos()->with(['aulas', 'leituras'])->get()->map(function ($curso) use ($user) {
+            // Obtém total de aulas e leituras
+            $totalAulas = $curso->aulas->count();
+            $totalLeituras = $curso->leituras->count();
+            $total = $totalAulas + $totalLeituras;
+
+            // Marca quais aulas foram vistas
+            $curso->aulas->map(function ($aula) use ($user) {
+                $aula->visto = $aula->users()->where('user_id', $user->id)->exists();
+                return $aula;
+            });
+
+            // Marca quais leituras foram vistas
+            $curso->leituras->map(function ($leitura) use ($user) {
+                $leitura->visto = $leitura->users()->where('user_id', $user->id)->exists();
+                return $leitura;
+            });
+
+            // Calcula quantidade de itens vistos
+            $aulasVistas = $curso->aulas->where('visto', true)->count();
+            $leiturasVistas = $curso->leituras->where('visto', true)->count();
+            $totalVistos = $aulasVistas + $leiturasVistas;
+
+            // Calcula percentual de conclusão
+            $curso->percentual_conclusao = $total > 0 ? round(($totalVistos / $total) * 100) : 0;
+
+            return $curso;
+        });
+
+        return response()->json($cursos);
     }
 }
