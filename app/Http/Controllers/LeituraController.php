@@ -18,7 +18,7 @@ class LeituraController extends Controller
         if(!$request->get('curso_id')){
             return response()->json(['msg' => 'Para buscar leituras deve ser informado um curso_id.', 400]);
         }
-        return response()->json(Leitura::where('curso_id', $request->get('curso_id'))->get());
+        return response()->json(Leitura::where('curso_id', $request->get('curso_id'))->orderBy('sequencia')->get());
     }
 
 

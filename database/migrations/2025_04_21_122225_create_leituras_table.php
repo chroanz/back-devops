@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('curso_id');
             $table->foreign('curso_id')->references('id')->on('cursos')->onDelete('cascade');
-            $table->integer('sequencia');
+            $table->unsignedInteger('sequencia');
             $table->string('titulo');
             $table->string('conteudo', 3000);
             $table->softDeletes();
             $table->timestamps();
+            $table->unique(['curso_id', 'sequencia']);
         });
     }
 
