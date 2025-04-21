@@ -33,8 +33,6 @@ class AulasController extends Controller
                 'titulo' => 'required|string|max:255',
                 'duracaoMinutos' => 'required|integer',
                 'videoUrl' => 'required|string|max:255',
-                'vista' => 'sometimes|boolean',
-                'video' => 'nullable|string|max:255',
                 'curso_id' => 'required|exists:cursos,id',
             ]);
 
@@ -95,8 +93,6 @@ class AulasController extends Controller
                 'titulo' => 'sometimes|required|string|max:255',
                 'duracaoMinutos' => 'sometimes|required|integer',
                 'videoUrl' => 'sometimes|required|string|max:255',
-                'vista' => 'sometimes|boolean',
-                'video' => 'nullable|string|max:255',
                 'curso_id' => 'sometimes|required|exists:cursos,id',
             ]);
 
@@ -119,9 +115,9 @@ class AulasController extends Controller
             if (!$aula || !$aula->exists) {
                 return response()->json(['error' => 'Aula não encontrada.'], 404);
             }
-    
+
             dd($aula); // Verifique se o modelo está carregado corretamente
-    
+
             $aula->delete();
             return response()->json(['message' => 'Aula removida com sucesso.'], 200);
         } catch (\Illuminate\Database\QueryException $e) {
@@ -129,5 +125,13 @@ class AulasController extends Controller
         } catch (Exception $e) {
             return response()->json(['error' => 'Erro ao remover aula.', 'details' => $e->getMessage()], 500);
         }
+    }
+
+
+    public function marcarVisto(Aulas $aulas)
+    {
+        $user = auth('api')->user();
+        $aulas->users()->attach($user->id);
+        return response()->json(['msg' => 'Aula marcada como vista.']);
     }
 }

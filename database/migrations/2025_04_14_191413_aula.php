@@ -16,21 +16,19 @@ return new class extends Migration
             $table->integer('sequencia');
             $table->string('titulo');
             $table->integer('duracaoMinutos');
-            $table->string('videoUrl');
-            $table->boolean('vista')->default(false);
-            $table->string('video')->default(null);
+            $table->string('videoUrl')->default(null);
             $table->foreignId('curso_id')->constrained('cursos')->onDelete('cascade');
             $table->timestamps();
+            $table->unique(['curso_id', 'sequencia']);
         });
         /**
          *  id: { type: Number, default: null },
             sequencia: Number,
             titulo: String,
             duracaoMinutos: Number,
-            videoUrl: String,
             vista: Boolean,
             curso_id: Number,
-            video: { type: String, default: null },
+            video: String,
          */
     }
 

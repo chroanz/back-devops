@@ -2,14 +2,15 @@
 
 namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
 use App\Models\Cursos;
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\aulas>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Leitura>
  */
-class AulasFactory extends Factory
+class LeituraFactory extends Factory
 {
+
     /**
      * Define the model's default state.
      *
@@ -22,8 +23,8 @@ class AulasFactory extends Factory
             'curso_id' => fake()->randomElement($cursosId),
             'sequencia' => fake()->randomDigitNotZero(),
             'titulo' => fake()->sentence(),
-            'duracaoMinutos' => fake()->randomNumber(2),
-            'videoUrl' => fake()->url(),
+            'conteudo' => implode("", array_map(fn($paragraph) => "<p>$paragraph</p>",
+            fake()->paragraphs(5))),
         ];
     }
 }
