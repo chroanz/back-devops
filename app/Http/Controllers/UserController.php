@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
-
+use Illuminate\Validation\ValidationException;
 class UserController extends Controller 
 {
     protected User $user;
@@ -83,33 +83,45 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-
-            // regras de validação de campos
-            try
-            {
-                $rules = [
-                    "email" => "email|required",
-                    "name" => "min:5|max:50|required",
-                    "password" => "required"
-                ];
-                $feedback = [
-                    // Irei definir posteriormente
-                ];
-
-                $request->validate($rules);
-                $user = $this->user->create($request->all());
-                if($user && $this->uf->create([
-                    'user_id' => $user->id,
-                    'function' => 'default'
-                 ]))
-                {
-                    return response()->json(["msg" => "User created successfully."], 200);
-                }
+        try {
+            $rules = [
+                "email" => "email|required|unique:users,email",
+                "name" => "min:5|max:50|required",
+                "password" => "required|min:5"
+            ];
+            $feedback = [
+                'email.required' => 'O campo e-mail é obrigatório.',
+                'email.email' => 'Informe um e-mail válido.',
+                'email.unique' => 'Este e-mail já está cadastrado.',
+    
+                'name.required' => 'O campo nome é obrigatório.',
+                'name.min' => 'O nome deve ter no mínimo 5 caracteres.',
+                'name.max' => 'O nome deve ter no máximo 50 caracteres.',
+    
+                'password.required' => 'O campo senha é obrigatório.',
+                'password.min' => 'A senha deve conter no mínimo 5 caracteres.'
+            ];
+    
+            $request->validate($rules, $feedback);
+    
+            $user = $this->user->create($request->all());
+    
+            if ($user && $this->uf->create([
+                'user_id' => $user->id,
+                'function' => 'default'
+            ])) {
+                return response()->json(["msg" => "Usuário criado com sucesso."], 200);
             }
-            catch(Exception $e)
-            {
-                return response()->json(["msg" => $e->getMessage()], 422);
-            }
+    
+        } catch (ValidationException $e) {
+            return response()->json([
+                "errors" => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                "msg" => "Erro interno: " . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function storeAdmin(Request $request)
