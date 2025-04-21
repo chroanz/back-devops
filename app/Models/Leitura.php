@@ -19,6 +19,10 @@ class Leitura extends Model
         'conteudo',
     ];
 
+    protected $hidden = [
+        'conteudo'
+    ];
+
     public function curso(): BelongsTo
     {
         return $this->belongsTo(Cursos::class, 'curso_id');

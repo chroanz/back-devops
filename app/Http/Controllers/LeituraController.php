@@ -37,7 +37,7 @@ class LeituraController extends Controller
      */
     public function show(Leitura $leitura)
     {
-        return response()->json($leitura);
+        return response()->json($leitura->makeVisible('conteudo'));
     }
 
 
