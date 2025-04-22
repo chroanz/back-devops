@@ -37,6 +37,8 @@ class LeituraController extends Controller
      */
     public function show(Leitura $leitura)
     {
+        $user = auth('api')->user();
+        $leitura->visto = $leitura->users()->where('user_id', $user->id)->exists();
         return response()->json($leitura->makeVisible('conteudo'));
     }
 
@@ -63,7 +65,10 @@ class LeituraController extends Controller
 
     public function marcarVisto(Leitura $leitura){
         $user = auth('api')->user();
-        $leitura->users()->attach($user->id);
-        return response()->json(['msg' => 'Leitura marcada como vista.']);
+        if(!$leitura->users()->where('user_id', $user->id)->exists()){
+            return response()->json(['msg' => 'Leitura marcada como vista.']);
+            $leitura->users()->attach($user->id);
+        }
+        return response()->json(['msg' => 'Leitura já estava marcada como vista.'], 400);
     }
 }

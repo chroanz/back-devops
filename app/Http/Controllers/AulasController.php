@@ -131,6 +131,10 @@ class AulasController extends Controller
     public function marcarVisto(Aulas $aulas)
     {
         $user = auth('api')->user();
+        if (!$aulas->users()->where('user_id', $user->id)->exists()) {
+            return response()->json(['msg' => 'Aula marcada como vista.']);
+            $aulas->users()->attach($user->id);
+        }
         $aulas->users()->attach($user->id);
         return response()->json(['msg' => 'Aula marcada como vista.']);
     }

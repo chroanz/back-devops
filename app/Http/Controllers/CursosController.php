@@ -48,7 +48,28 @@ class CursosController extends Controller
      */
     public function show(string $id)
     {
-        $curso = $this->cursos->find($id);
+        $user = auth('api')->user();
+        $curso = $this->cursos->with([
+            'aulas' => function($query) use($user) {
+            $query->with(['users' => function ($q) use ($user){
+                $q->where('user_id', $user?->id);
+            }])->orderBy('sequencia');
+        },
+            'leituras' => function($query) use ($user) {
+            $query->with(['users' => function ($q) use ($user) {
+                $q->where('user_id', $user?->id);
+            }])->orderBy('sequencia');
+        }
+        ])->find($id);
+        $curso->aulas->each(function ($aula){
+            $aula->visto = $aula->users->isNotEmpty();
+            unset($aula->users);
+        });
+
+        $curso->leituras->each(function ($leitura){
+            $leitura->visto = $leitura->users->isNotEmpty();
+            unset($leitura->users);
+        });
 
         return !empty($curso)
             ? response()->json($curso)
