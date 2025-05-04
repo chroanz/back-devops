@@ -15,6 +15,7 @@ class Cursos extends Model
         'titulo',
         'descricao',
         'categoria',
+        'capa'
     ];
 
     public $timestamps = true;
@@ -27,15 +28,18 @@ class Cursos extends Model
             ->get();
     }
 
-    public function users() :BelongsToMany{
+    public function users(): BelongsToMany
+    {
         return $this->belongsToMany(User::class, 'cursos_user', 'cursos_id', 'user_id')->withTimestamps();
     }
 
-    public function aulas(): HasMany{
+    public function aulas(): HasMany
+    {
         return $this->hasMany(Aulas::class, 'curso_id');
     }
 
-    public function leituras(): HasMany{
+    public function leituras(): HasMany
+    {
         return $this->hasMany(Leitura::class, 'curso_id');
     }
 }

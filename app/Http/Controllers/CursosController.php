@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Cursos;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CursosController extends Controller
 {
@@ -21,9 +23,9 @@ class CursosController extends Controller
      */
     public function index()
     {
-        $cursos = $this->cursos->with(['aulas' => function($query) {
+        $cursos = $this->cursos->with(['aulas' => function ($query) {
             $query->orderBy('sequencia');
-        }, 'leituras' => function($query) {
+        }, 'leituras' => function ($query) {
             $query->orderBy('sequencia');
         }])->get();
         return response()->json($cursos);
@@ -38,8 +40,58 @@ class CursosController extends Controller
             'titulo' => 'required|string|max:255',
             'descricao' => 'required|string',
             'categoria' => 'required|string|max:255',
+            'capa' => 'nullable|string'
         ]);
-        $curso = Cursos::create($validated);
+
+        $data = $validated;
+
+        if (!empty($validated['capa'])) {
+            // Extrai o conteúdo base64 removendo cabeçalho se existir
+            $base64Image = preg_replace('/^data:image\/\w+;base64,/', '', $validated['capa']);
+
+            try {
+                // Decodifica o base64
+                $imageData = base64_decode($base64Image);
+
+                if ($imageData === false) {
+                    return response()->json(['message' => 'Imagem inválida'], 400);
+                }
+
+                // Verifica o tamanho (5MB)
+                if (strlen($imageData) > 5 * 1024 * 1024) {
+                    return response()->json(['message' => 'A imagem deve ter menos de 5MB'], 400);
+                }
+
+                // Cria um recurso de imagem temporário
+                $img = imagecreatefromstring($imageData);
+                if (!$img) {
+                    return response()->json(['message' => 'Formato de imagem inválido'], 400);
+                }
+
+                // Verifica dimensões
+                $width = imagesx($img);
+                $height = imagesy($img);
+
+                if ($width > 2560 || $height > 2560) {
+                    imagedestroy($img);
+                    return response()->json(['message' => 'A imagem não pode ter dimensão superior a 2560px'], 400);
+                }
+
+                imagedestroy($img);
+
+                // Gera nome único para o arquivo
+                $filename = Str::uuid() . '.jpg';
+
+                // Salva o arquivo
+                Storage::disk('public')->put('cursos/capas/' . $filename, $imageData);
+
+                $data['capa'] = 'storage/cursos/capas/' . $filename;
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Erro ao processar imagem'], 400);
+            }
+        }
+
+        $curso = Cursos::create($data);
         return response()->json($curso, 201);
     }
 
@@ -50,23 +102,23 @@ class CursosController extends Controller
     {
         $user = auth('api')->user();
         $curso = $this->cursos->with([
-            'aulas' => function($query) use($user) {
-            $query->with(['users' => function ($q) use ($user){
-                $q->where('user_id', $user?->id);
-            }])->orderBy('sequencia');
-        },
-            'leituras' => function($query) use ($user) {
-            $query->with(['users' => function ($q) use ($user) {
-                $q->where('user_id', $user?->id);
-            }])->orderBy('sequencia');
-        }
+            'aulas' => function ($query) use ($user) {
+                $query->with(['users' => function ($q) use ($user) {
+                    $q->where('user_id', $user?->id);
+                }])->orderBy('sequencia');
+            },
+            'leituras' => function ($query) use ($user) {
+                $query->with(['users' => function ($q) use ($user) {
+                    $q->where('user_id', $user?->id);
+                }])->orderBy('sequencia');
+            }
         ])->find($id);
-        $curso->aulas->each(function ($aula){
+        $curso->aulas->each(function ($aula) {
             $aula->visto = $aula->users->isNotEmpty();
             unset($aula->users);
         });
 
-        $curso->leituras->each(function ($leitura){
+        $curso->leituras->each(function ($leitura) {
             $leitura->visto = $leitura->users->isNotEmpty();
             unset($leitura->users);
         });
@@ -156,7 +208,8 @@ class CursosController extends Controller
         ], 201);
     }
 
-    public function meusCursos(){
+    public function meusCursos()
+    {
         /**
          * @var User $user
          */
