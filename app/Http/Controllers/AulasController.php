@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Aulas;
 use Illuminate\Http\Request;
 use Exception;
+use DateTime;
+use App\Models\Aulas;
 
 class AulasController extends Controller
 {
@@ -132,10 +133,9 @@ class AulasController extends Controller
     {
         $user = auth('api')->user();
         if (!$aulas->users()->where('user_id', $user->id)->exists()) {
+            $aulas->users()->attach($user->id, ['visto' => new DateTime()]);
             return response()->json(['msg' => 'Aula marcada como vista.']);
-            $aulas->users()->attach($user->id);
         }
-        $aulas->users()->attach($user->id);
-        return response()->json(['msg' => 'Aula marcada como vista.']);
+        return response()->json(['msg' => 'Aula já estava marcada como vista.'], 400);
     }
 }

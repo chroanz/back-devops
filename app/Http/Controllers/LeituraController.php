@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Leitura;
-use App\Http\Requests\StoreLeituraRequest;
-use App\Http\Requests\UpdateLeituraRequest;
-use App\Models\User;
 use Illuminate\Http\Request;
+use DateTime;
+use App\Models\User;
+use App\Models\Leitura;
+use App\Http\Requests\UpdateLeituraRequest;
+use App\Http\Requests\StoreLeituraRequest;
 
 class LeituraController extends Controller
 {
@@ -66,8 +67,8 @@ class LeituraController extends Controller
     public function marcarVisto(Leitura $leitura){
         $user = auth('api')->user();
         if(!$leitura->users()->where('user_id', $user->id)->exists()){
+            $leitura->users()->attach($user->id,['visto' => new DateTime()]);
             return response()->json(['msg' => 'Leitura marcada como vista.']);
-            $leitura->users()->attach($user->id);
         }
         return response()->json(['msg' => 'Leitura já estava marcada como vista.'], 400);
     }
