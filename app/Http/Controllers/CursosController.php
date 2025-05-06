@@ -91,8 +91,23 @@ class CursosController extends Controller
             }
         }
 
-        $curso = Cursos::create($data);
-        return response()->json($curso, 201);
+        try {
+            $curso = Cursos::create($data);
+            return response()->json([
+            'status' => true,
+            'id' => $curso['id']
+            ], 201);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+            'status' => false,
+            'message' => 'Erro ao salvar o curso: ' . $e->getMessage()
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+            'status' => false,
+            'message' => 'Erro inesperado: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
