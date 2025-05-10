@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Auth\Events\PasswordReset;
+use App\Http\Controllers\TestController;
 
 Route::get('/user/me',[UserController::class, 'me'])->middleware('auth:sanctum');
 Route::apiResource("user", UserController::class);
@@ -21,7 +22,9 @@ Route::prefix('cursos')->group(function () {
     Route::delete('/delete/{curso}', [CursosController::class, 'destroy']);
     Route::get('/search/{search}', [CursosController::class, 'search']);
     Route::post('/subscribe/{cursos}', [CursosController::class, 'subscribe'])->middleware(['auth:sanctum']);
-    Route::get('/meus_cursos',[CursosController::class, 'meusCursos'])->middleware('auth:sanctum');
+    // Route::get('/meus_cursos',[CursosController::class, 'meusCursos'])->middleware('auth:sanctum');
+    Route::get('/meus_cursos', [CursosController::class, 'meusCursos'])->middleware('auth:api');
+
 });
 
 Route::prefix('admin')->group(function () {
@@ -46,12 +49,24 @@ Route::apiResource('leituras', LeituraController::class)->middleware('auth:sanct
 
 Route::post('login', [UserController::class, 'login'])->name('login');
 
+Route::get('/test-env', function () {
+    return env('DB_DATABASE');
+});
+
+
 
 Route::post('forgot-password', [UserController::class, 'forgotPassword'])->name('forgot.password');
 Route::post('reset-password', [UserController::class, 'resetPassword'])->name('password.reset');
+Route::get('/test', [TestController::class, 'index']);
+Route::post('/api/cursos', [CursosController::class, 'store']);
+
+
+
 
 Route::middleware(['auth:api'])->group(function () {
     Route::get('/user/me', [UserController::class, 'me']);
+    // Route::get('/user/me', [UserController::class, 'me'])->middleware('auth:api');
+
     Route::post('/logout', [UserController::class, 'logout']);
     // outras rotas protegidas
 });
