@@ -83,9 +83,18 @@ class CursosController extends Controller
                 $filename = Str::uuid() . '.jpg';
 
                 // Salva o arquivo
-                Storage::disk('public')->put('cursos/capas/' . $filename, $imageData);
+                $fullPath = 'imagens/cursos/capas/' . $filename;
+                $upload = Storage::disk('s3')->put($fullPath, $imageData);
+                if (!$upload) {
+                    return response()->json(['message' => 'Erro ao salvar imagem'], 400);
+                }
 
-                $data['capa'] = 'storage/cursos/capas/' . $filename;
+                // Gera URL temporária inicial
+                $path = Storage::disk('s3')->temporaryUrl($fullPath, now()->addDays(7));
+
+                $data['capa'] = $fullPath;
+                $data['capa_url'] = $path;
+                $data['capa_expiration'] = now()->addDays(7);
             } catch (\Exception $e) {
                 return response()->json(['message' => 'Erro ao processar imagem'], 400);
             }
@@ -165,6 +174,28 @@ class CursosController extends Controller
         $curso->titulo = $validated['titulo'] ?? $curso->titulo;
         $curso->descricao = $validated['descricao'] ?? $curso->descricao;
         $curso->categoria = $validated['categoria'] ?? $curso->categoria;
+
+        if ($request->has('capa')) {
+            // Processa nova imagem como no store
+            // Atualiza capa, capa_url e capa_expiration
+            $base64Image = preg_replace('/^data:image\/\w+;base64,/', '', $request->capa);
+
+            try {
+                // Processo similar ao store para salvar nova imagem
+                $imageData = base64_decode($base64Image);
+                $filename = Str::uuid() . '.jpg';
+                $fullPath = 'imagens/cursos/capas/' . $filename;
+
+                if (Storage::disk('s3')->put($fullPath, $imageData)) {
+                    $path = Storage::disk('s3')->temporaryUrl($fullPath, now()->addDays(7));
+                    $curso->capa = $fullPath;
+                    $curso->capa_url = $path;
+                    $curso->capa_expiration = now()->addDays(7);
+                }
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Erro ao processar nova imagem'], 400);
+            }
+        }
 
         // Force a atualização
         $saved = $curso->save();

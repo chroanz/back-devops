@@ -17,6 +17,8 @@ return new class extends Migration
             $table->text('descricao');
             $table->string('categoria');
             $table->string('capa')->nullable();
+            $table->string('capa_url', 1000)->nullable();
+            $table->dateTime('capa_expiration')->nullable();
             $table->timestamps();
         });
     }
