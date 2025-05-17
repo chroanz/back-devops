@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller 
 {
@@ -39,30 +40,6 @@ class UserController extends Controller
         $admins = $this->uf->where('function', 'admin')->with('user')->get();
         return response()->json($admins);
     }
-
-    /**
-     * Handle user login.
-     */
-    // public function login(Request $request)
-    // {
-    //     $request->validate([
-    //         'email' => 'required|email',
-    //         'password' => 'required'
-    //     ]);
-
-    //     $user = $this->user->where('email', $request->email)->first();
-
-    //     if (!$user || !Hash::check($request->password, $user->password)) {
-    //         return response()->json(['msg' => 'Invalid credentials.'], 401);
-    //     }
-
-    //     $token = $user->createToken('auth_token')->plainTextToken;
-
-    //     return response()->json([
-    //         'msg' => 'Login successful.',
-    //         'token' => $token
-    //     ], 200);
-    // }
 
     public function login(Request $request)
     {
@@ -111,7 +88,7 @@ class UserController extends Controller
                 'user_id' => $user->id,
                 'function' => 'default'
             ])) {
-                return response()->json(["msg" => "Usuário criado com sucesso."], 200);
+                return response()->json(["msg" => "Usuário criado com sucesso."], 201);
             }
     
         } catch (ValidationException $e) {
@@ -187,33 +164,25 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        try
-        {
-            $user = $this->user->find($id);
-            if(!$user)
-            {
-                return response()->json(["msg" => "Resource not found."], 404);
-            }
-            // Sei que tá duplicado, pretendo melhorar isso dps.
-            $rules = [
-                "name" => "min:5|max:50|required",
-                "password" => "required",
-                "email" => "email|required"
-            ];
+       $user = $this->user->find($id);
 
-            if($request->method() === "PUT" || $request->method() === "PATCH")
-            {
-                array_pop($rules);
-            }
-            $request->validate($rules);
-            $user->update($request->all());
-            return response()->json($user);
+        if (!$user) {
+            return response()->json(["msg" => "Recurso não encontrado."], 404);
+        }
 
-        }
-        catch(Exception $e)
-        {
-            return response()->json(["msg" => $e->getMessage()], 422);
-        }
+        $rules = [
+            'name' => 'sometimes|required|min:5|max:50',
+            'email' => 'sometimes|required|email|unique:users,email,' . $id,
+            'password' => 'sometimes|required|min:6',
+        ];
+
+
+        $request->validate($rules);
+
+        $user->update($request->all());
+
+        return response()->json($user, 200);
+
     }
 
     /**
@@ -278,7 +247,6 @@ class UserController extends Controller
             {
                 return response()->json(["msg" => "Resource not found."], 404);
             }
-            // Sei que tá duplicado, pretendo melhorar isso dps.
             $rules = [
                 "id" => "required",
                 "name" => "min:5|max:50|required",
