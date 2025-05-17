@@ -56,6 +56,18 @@ class UserController extends Controller
         ]);
         
     }
+
+    public function logout()
+    {
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json(['msg' => 'Logout realizado com sucesso.'], 200);
+        } catch (Exception $e) {
+            return response()->json(['msg' => 'Erro ao deslogar: ' . $e->getMessage()], 500);
+        }
+    }
+
+
     /**
      * Store a newly created resource in storage.
      */
