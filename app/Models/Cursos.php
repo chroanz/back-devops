@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Cursos extends Model
 {
@@ -18,8 +19,14 @@ class Cursos extends Model
         'titulo',
         'descricao',
         'categoria',
-        'capa'
+        'capa',
+        'capa_url',
+        'capa_expiration'
     ];
+
+    protected $appends = ['capa_url'];
+
+    protected $hidden = ['capa', 'capa_expiration'];
 
     public $timestamps = true;
 
@@ -29,6 +36,33 @@ class Cursos extends Model
             ->orWhere('descricao', 'LIKE', "%{$param}%")
             ->orWhere('categoria', 'LIKE', "%{$param}%")
             ->get();
+    }
+
+    public function getCapaUrlAttribute()
+    {
+        if (empty($this->capa)) {
+            return null;
+        }
+
+        // Se já existe uma URL temporária válida, retorna ela
+        if (
+            !empty($this->attributes['capa_url']) &&
+            !empty($this->attributes['capa_expiration']) &&
+            now()->lt($this->attributes['capa_expiration'])
+        ) {
+            return $this->attributes['capa_url'];
+        }
+
+        // Gera nova URL temporária
+        $url = Storage::disk('s3')->temporaryUrl($this->capa, now()->addDays(7));
+
+        // Atualiza no banco
+        $this->update([
+            'capa_url' => $url,
+            'capa_expiration' => now()->addDays(7)
+        ]);
+
+        return $url;
     }
 
     public function users(): BelongsToMany
