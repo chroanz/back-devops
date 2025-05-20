@@ -32,9 +32,10 @@ class Cursos extends Model
 
     public static function getByParam($param)
     {
-        return self::where('titulo', 'LIKE', "%{$param}%")
-            ->orWhere('descricao', 'LIKE', "%{$param}%")
-            ->orWhere('categoria', 'LIKE', "%{$param}%")
+        $param = strtolower($param);
+        return self::where('titulo', 'ILIKE', "%{$param}%")
+            ->orWhere('descricao', 'ILIKE', "%{$param}%")
+            ->orWhere('categoria', 'ILIKE', "%{$param}%")
             ->get();
     }
 
