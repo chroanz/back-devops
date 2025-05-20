@@ -33,10 +33,10 @@ class Cursos extends Model
     public static function getByParam($param)
     {
         $param = strtolower($param);
-        return self::where('titulo', 'ILIKE', "%{$param}%")
-            ->orWhere('descricao', 'ILIKE', "%{$param}%")
-            ->orWhere('categoria', 'ILIKE', "%{$param}%")
-            ->get();
+        return self::whereLike('titulo', "%{$param}%")
+            ->orWhereLike('descricao', "%{$param}%")
+            ->orWhereLike('categoria',  "%{$param}%")
+            ->with(['leituras', 'aulas'])->get();
     }
 
     public function getCapaUrlAttribute()
@@ -54,18 +54,23 @@ class Cursos extends Model
             return $this->attributes['capa_url'];
         }
 
-        // Gera nova URL temporária
-        $url = Storage::disk('s3')->temporaryUrl($this->capa, now()->addDays(7));
+        try{
+            // Gera nova URL temporária
+            $url = Storage::disk('s3')->temporaryUrl($this->capa, now()->addDays(7));
 
-        // Atualiza no banco, ignorando percentual de conclusão, que não deve ser persistido no banco
-        $percentual = $this->percentual_conclusao ?? null;
-        unset($this->percentual_conclusao);
-        $this->update([
-            'capa_url' => $url,
-            'capa_expiration' => now()->addDays(7)
-        ]);
-        if($percentual){
-            $this->percentual_conclusao = $percentual;
+            // Atualiza no banco, ignorando percentual de conclusão, que não deve ser persistido no banco
+            $percentual = $this->percentual_conclusao ?? null;
+            unset($this->percentual_conclusao);
+            $this->update([
+                'capa_url' => $url,
+                'capa_expiration' => now()->addDays(7)
+            ]);
+            if($percentual){
+                $this->percentual_conclusao = $percentual;
+            }}
+        catch (\Throwable $e) {
+            // Se falhar, retorna a URL original
+            return $this->attributes['capa_url'] ?? null;
         }
 
         return $url;
