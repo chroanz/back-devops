@@ -31,9 +31,21 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = $this->uf->where('function', 'default')->with('user')->get();
+        $current = auth('api')->user();
+        if (!$current || !$current->isAdmin()) {
+            return response()->json(['msg' => 'Unauthorized'], 403);
+        }
+
+        // Recupera apenas users com função 'default'
+        $users = $this->uf
+            ->where('function', 'default')
+            ->with('user')
+            ->get()
+            ->pluck('user');
+
         return response()->json($users);
     }
+
 
     public function getAdmins()
     {

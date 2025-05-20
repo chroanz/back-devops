@@ -63,26 +63,21 @@ class UserControllerTest extends TestCase
         $response->assertStatus(403);
     }
 
-  #[\PHPUnit\Framework\Attributes\Test]
-    public function usuario_admin_pode_listar_todos_os_usuarios_padrao()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function usuario_admin_pode_listar_todos_os_usuarios()
     {
-        $usuarios = User::factory()
-            ->count(3)
-            ->create();
+        $usuarios = User::factory()->count(3)->create();
 
         foreach ($usuarios as $usuario) {
-            $usuario->functions()->create([
-                'function' => 'default',
-            ]);
+            $usuario->functions()->create(['function' => 'default']);
         }
 
-        $usuario = User::factory()->create();
-        $usuario->functions()->create(['function' => 'admin']);
+        $admin = User::factory()->create();
+        $admin->functions()->create(['function' => 'admin']);
 
-        $response = $this->actingAs($usuario, 'api')->getJson('/api/user');
+        $response = $this->actingAs($admin, 'api')->getJson('/api/user');
 
         $response->assertStatus(200);
-
         $response->assertJsonCount(3);
 
         foreach ($usuarios as $usuario) {
@@ -93,6 +88,7 @@ class UserControllerTest extends TestCase
             ]);
         }
     }
+
 
 
 
@@ -130,6 +126,7 @@ class UserControllerTest extends TestCase
             'email' => 'lucasatualizado@example.com',
         ]);
     }
+    
     #[\PHPUnit\Framework\Attributes\Test]
     public function nao_pode_atualizar_usuario_com_email_ja_existente(): void
     {
