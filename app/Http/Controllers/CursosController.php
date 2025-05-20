@@ -246,30 +246,18 @@ class CursosController extends Controller
          */
         $user = auth('api')->user();
         $cursos = $user->cursos()->with(['aulas', 'leituras'])->get()->map(function ($curso) use ($user) {
-            // Obtém total de aulas e leituras
-            $totalAulas = $curso->aulas->count();
-            $totalLeituras = $curso->leituras->count();
-            $total = $totalAulas + $totalLeituras;
-
             // Marca quais aulas foram vistas
             $curso->aulas->map(function ($aula) use ($user) {
-                $aula->visto = $aula->users()->where('user_id', $user->id)->exists();
+                $aula->setAttribute('visto', $aula->users()->where('user_id', $user->id)->exists());
                 return $aula;
             });
 
             // Marca quais leituras foram vistas
             $curso->leituras->map(function ($leitura) use ($user) {
-                $leitura->visto = $leitura->users()->where('user_id', $user->id)->exists();
+                $leitura->setAttribute('visto', $leitura->users()->where('user_id', $user->id)->exists());
                 return $leitura;
             });
-
-            // Calcula quantidade de itens vistos
-            $aulasVistas = $curso->aulas->where('visto', true)->count();
-            $leiturasVistas = $curso->leituras->where('visto', true)->count();
-            $totalVistos = $aulasVistas + $leiturasVistas;
-
-            // Calcula percentual de conclusão
-            $curso->percentual_conclusao = $total > 0 ? round(($totalVistos / $total) * 100) : 0;
+            $curso->percentual_conclusao = $curso->calcularPercentualConclusao($user);
 
             return $curso;
         });

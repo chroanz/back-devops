@@ -56,11 +56,16 @@ class Cursos extends Model
         // Gera nova URL temporária
         $url = Storage::disk('s3')->temporaryUrl($this->capa, now()->addDays(7));
 
-        // Atualiza no banco
+        // Atualiza no banco, ignorando percentual de conclusão, que não deve ser persistido no banco
+        $percentual = $this->percentual_conclusao ?? null;
+        unset($this->percentual_conclusao);
         $this->update([
             'capa_url' => $url,
             'capa_expiration' => now()->addDays(7)
         ]);
+        if($percentual){
+            $this->percentual_conclusao = $percentual;
+        }
 
         return $url;
     }
@@ -78,5 +83,24 @@ class Cursos extends Model
     public function leituras(): HasMany
     {
         return $this->hasMany(Leitura::class, 'curso_id');
+    }
+
+    public function calcularPercentualConclusao(User $user): int
+    {
+        $totalAulas = $this->aulas->count();
+        $totalLeituras = $this->leituras->count();
+        $total = $totalAulas + $totalLeituras;
+
+        $aulasVistas = $this->aulas->filter(function ($aula) use ($user) {
+            return $aula->users()->where('user_id', $user->id)->exists();
+        })->count();
+
+        $leiturasVistas = $this->leituras->filter(function ($leitura) use ($user) {
+            return $leitura->users()->where('user_id', $user->id)->exists();
+        })->count();
+
+        $totalVistos = $aulasVistas + $leiturasVistas;
+
+        return $total > 0 ? round(($totalVistos / $total) * 100) : 0;
     }
 }

@@ -12,8 +12,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
-class UserController extends Controller 
+class UserController extends Controller
 {
     protected User $user;
     protected UserFunction $uf;
@@ -30,39 +31,27 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = $this->uf->where('function', 'default')->with('user')->get();
+        $current = auth('api')->user();
+        if (!$current || !$current->isAdmin()) {
+            return response()->json(['msg' => 'Unauthorized'], 403);
+        }
+
+        // Recupera apenas users com função 'default'
+        $users = $this->uf
+            ->where('function', 'default')
+            ->with('user')
+            ->get()
+            ->pluck('user');
+
         return response()->json($users);
     }
+
 
     public function getAdmins()
     {
         $admins = $this->uf->where('function', 'admin')->with('user')->get();
         return response()->json($admins);
     }
-
-    /**
-     * Handle user login.
-     */
-    // public function login(Request $request)
-    // {
-    //     $request->validate([
-    //         'email' => 'required|email',
-    //         'password' => 'required'
-    //     ]);
-
-    //     $user = $this->user->where('email', $request->email)->first();
-
-    //     if (!$user || !Hash::check($request->password, $user->password)) {
-    //         return response()->json(['msg' => 'Invalid credentials.'], 401);
-    //     }
-
-    //     $token = $user->createToken('auth_token')->plainTextToken;
-
-    //     return response()->json([
-    //         'msg' => 'Login successful.',
-    //         'token' => $token
-    //     ], 200);
-    // }
 
     public function login(Request $request)
     {
@@ -77,8 +66,20 @@ class UserController extends Controller
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60
         ]);
-        
+
     }
+
+    public function logout()
+    {
+        try {
+            JWTAuth::invalidate(JWTAuth::getToken());
+            return response()->json(['msg' => 'Logout realizado com sucesso.'], 200);
+        } catch (Exception $e) {
+            return response()->json(['msg' => 'Erro ao deslogar: ' . $e->getMessage()], 500);
+        }
+    }
+
+
     /**
      * Store a newly created resource in storage.
      */
@@ -94,26 +95,26 @@ class UserController extends Controller
                 'email.required' => 'O campo e-mail é obrigatório.',
                 'email.email' => 'Informe um e-mail válido.',
                 'email.unique' => 'Este e-mail já está cadastrado.',
-    
+
                 'name.required' => 'O campo nome é obrigatório.',
                 'name.min' => 'O nome deve ter no mínimo 5 caracteres.',
                 'name.max' => 'O nome deve ter no máximo 50 caracteres.',
-    
+
                 'password.required' => 'O campo senha é obrigatório.',
                 'password.min' => 'A senha deve conter no mínimo 5 caracteres.'
             ];
-    
+
             $request->validate($rules, $feedback);
-    
+
             $user = $this->user->create($request->all());
-    
+
             if ($user && $this->uf->create([
                 'user_id' => $user->id,
                 'function' => 'default'
             ])) {
-                return response()->json(["msg" => "Usuário criado com sucesso."], 200);
+                return response()->json(["msg" => "Usuário criado com sucesso."], 201);
             }
-    
+
         } catch (ValidationException $e) {
             return response()->json([
                 "errors" => $e->errors()
@@ -187,33 +188,25 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        try
-        {
-            $user = $this->user->find($id);
-            if(!$user)
-            {
-                return response()->json(["msg" => "Resource not found."], 404);
-            }
-            // Sei que tá duplicado, pretendo melhorar isso dps.
-            $rules = [
-                "name" => "min:5|max:50|required",
-                "password" => "required",
-                "email" => "email|required"
-            ];
+       $user = $this->user->find($id);
 
-            if($request->method() === "PUT" || $request->method() === "PATCH")
-            {
-                array_pop($rules);
-            }
-            $request->validate($rules);
-            $user->update($request->all());
-            return response()->json($user);
+        if (!$user) {
+            return response()->json(["msg" => "Recurso não encontrado."], 404);
+        }
 
-        }
-        catch(Exception $e)
-        {
-            return response()->json(["msg" => $e->getMessage()], 422);
-        }
+        $rules = [
+            'name' => 'sometimes|required|min:5|max:50',
+            'email' => 'sometimes|required|email|unique:users,email,' . $id,
+            'password' => 'sometimes|required|min:6',
+        ];
+
+
+        $request->validate($rules);
+
+        $user->update($request->all());
+
+        return response()->json($user, 200);
+
     }
 
     /**
@@ -278,7 +271,6 @@ class UserController extends Controller
             {
                 return response()->json(["msg" => "Resource not found."], 404);
             }
-            // Sei que tá duplicado, pretendo melhorar isso dps.
             $rules = [
                 "id" => "required",
                 "name" => "min:5|max:50|required",
@@ -322,7 +314,7 @@ class UserController extends Controller
 
     public function me()
     {
-        return response()->json(auth()->user());
+        return response()->json(auth('api')->user());
     }
 
 
@@ -330,26 +322,26 @@ class UserController extends Controller
     public function meusCursos()
     {
         $user = auth('api')->user();
-    
+
         $cursos = $user->cursos()->with(['aulas', 'leituras'])->get();
-    
+
         $result = $cursos->map(function ($curso) use ($user) {
             $aulasTotal = $curso->aulas->count();
             $leiturasTotal = $curso->leituras->count();
-    
+
             $aulasVistas = $curso->aulas->filter(function ($aula) use ($user) {
                 return $aula->users->contains($user->id);
             })->count();
-    
+
             $leiturasVistas = $curso->leituras->filter(function ($leitura) use ($user) {
                 return $leitura->users->contains($user->id);
             })->count();
-    
+
             $total = $aulasTotal + $leiturasTotal;
             $vistos = $aulasVistas + $leiturasVistas;
-    
+
             $percentual = $total > 0 ? round(($vistos / $total) * 100, 2) : 0;
-    
+
             return [
                 'id' => $curso->id,
                 'titulo' => $curso->titulo,
@@ -359,9 +351,9 @@ class UserController extends Controller
                 'percentual_conclusao' => $percentual,
             ];
         });
-    
+
         return response()->json($result);
     }
-    
+
 
 }

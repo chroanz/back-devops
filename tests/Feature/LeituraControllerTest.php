@@ -24,6 +24,7 @@ class LeituraControllerTest extends TestCase
             'email' => 'test@example.com',
             'password' => bcrypt('password')
         ]);
+        $this->user->functions()->create(['function' => 'admin']);
         $this->token = JWTAuth::fromUser($this->user);
         $this->curso = Cursos::factory()->create();
     }

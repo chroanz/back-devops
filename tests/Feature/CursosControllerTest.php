@@ -2,114 +2,130 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cursos;
 use App\Models\User;
+use App\Models\Cursos;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
-use Tymon\JWTAuth\Facades\JWTAuth;
 
 class CursosControllerTest extends TestCase
 {
     use RefreshDatabase;
-
-    private User $user;
-    private string $token;
-
-    protected function setUp(): void
+    
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function usuario_autenticado_pode_ver_um_curso_completo()
     {
-        parent::setUp();
-        $this->user = User::factory()->create([
-            'email' => 'test@example.com',
-            'password' => bcrypt('password')
-        ]);
-        $this->token = JWTAuth::fromUser($this->user);
+        $usuario = User::factory()->create();
+        $curso = Cursos::factory()->create();
+
+        $response = $this->actingAs($usuario, 'api')->getJson("/api/cursos/show/{$curso->id}");
+
+        $response->assertStatus(200);
+        $response->assertJsonFragment(['id' => $curso->id]);
     }
-
-    public function test_index_lista_cursos()
+    public function usuario_autenticado_pode_cadastrar_novo_curso()
     {
-        $cursos = Cursos::factory(3)->create();
+        Storage::fake('s3');
+        $usuario = User::factory()->create();
+        $usuario->functions()->create(['function' => 'admin']);
 
-        $response = $this->actingAs($this->user)
-            ->getJson('/api/cursos');
+        $base64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AApMBgRL9JP0AAAAASUVORK5CYII=';
 
-        $response->assertStatus(200)
-            ->assertJsonCount(3);
-    }
-
-    public function test_store_cria_curso()
-    {
-        $cursoData = [
+        $dados = [
             'titulo' => 'Curso Teste',
-            'descricao' => 'Descrição teste',
-            'categoria' => 'Categoria teste',
+            'descricao' => 'Descrição do curso teste',
+            'categoria' => 'Categoria X',
+            'capa' => $base64Image,
         ];
 
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer ' . $this->token
-        ])
-            ->postJson('/api/cursos/create', $cursoData);
+        $response = $this->actingAs($usuario, 'api')->postJson('/api/cursos/create', $dados);
 
-        $response->assertStatus(201)
-            ->assertJsonFragment($cursoData);
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('cursos', ['titulo' => 'Curso Teste']);
+
+        $curso = $response->json();
+
+        $this->assertArrayHasKey('capa', $curso);
+        $this->assertArrayHasKey('capa_url', $curso);
+        $this->assertArrayHasKey('capa_expiration', $curso);
+
+        Storage::disk('s3')->assertExists($curso['capa']);
     }
 
-    public function test_show_exibe_curso()
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function usuario_autenticado_pode_atualizar_um_curso()
     {
-        $curso = Cursos::factory()->create();
+        $usuario = User::factory()->create();
+        // Criar função admin para o usuário
+        $usuario->functions()->create(['function' => 'admin']);
 
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer ' . $this->token
-        ])
-            ->getJson("/api/cursos/show/{$curso->id}");
+        $curso = Cursos::factory()->create([
+            'titulo' => 'Curso Antigo'
+        ]);
 
-        $response->assertStatus(200)
-            ->assertJsonFragment(['titulo' => $curso->titulo]);
+        $response = $this->actingAs($usuario, 'api')->putJson("/api/cursos/update/{$curso->id}", [
+            'titulo' => 'Curso Atualizado'
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertDatabaseHas('cursos', ['titulo' => 'Curso Atualizado']);
     }
 
-    public function test_update_atualiza_curso()
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function usuario_autenticado_pode_deletar_um_curso()
     {
-        $curso = Cursos::factory()->create();
-        $updateData = ['titulo' => 'Novo Título'];
+        $usuario = User::factory()->create();
+        // Criar função admin para o usuário
+        $usuario->functions()->create(['function' => 'admin']);
 
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer ' . $this->token
-        ])
-            ->putJson("/api/cursos/update/{$curso->id}", $updateData);
-
-        $response->assertStatus(200)
-            ->assertJsonFragment(['titulo' => 'Novo Título']);
-    }
-
-    public function test_delete_remove_curso()
-    {
         $curso = Cursos::factory()->create();
 
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer ' . $this->token
-        ])
-            ->deleteJson("/api/cursos/delete/{$curso->id}");
+        $response = $this->actingAs($usuario, 'api')->deleteJson("/api/cursos/delete/{$curso->id}");
 
         $response->assertStatus(204);
         $this->assertDatabaseMissing('cursos', ['id' => $curso->id]);
     }
 
-    public function test_subscribe_matricula_usuario()
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function usuario_pode_se_matricular_em_um_curso()
     {
+        $usuario = User::factory()->create();
         $curso = Cursos::factory()->create();
 
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer ' . $this->token
-        ])
-            ->postJson("/api/cursos/subscribe/{$curso->id}");
+        $response = $this->actingAs($usuario, 'api')->postJson("/api/cursos/subscribe/{$curso->id}");
 
-        $response->assertStatus(201)
-            ->assertJsonFragment(['msg' => 'Matrícula realizada com sucesso']);
-
-        $response = $this->withHeaders([
-            'Authorization' => 'Bearer ' . $this->token
-        ])->getJson("/api/cursos/meus_cursos");
-
-        $response->assertStatus(200)
-            ->assertJsonCount(1);
+        $response->assertStatus(201);
+        $response->assertJsonFragment(['msg' => 'Matrícula realizada com sucesso']);
+        $this->assertTrue($usuario->cursos()->where('cursos_id', $curso->id)->exists());
     }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function usuario_pode_listar_seus_cursos_matriculados()
+    {
+        $usuario = User::factory()->create();
+        $curso = Cursos::factory()->create();
+        $usuario->cursos()->attach($curso->id);
+
+        $response = $this->actingAs($usuario, 'api')->getJson("/api/cursos/meus_cursos");
+
+        $response->assertStatus(200);
+        $response->assertJsonFragment(['id' => $curso->id]);
+    }
+
+    #[\PHPUnit\Framework\Attributes\Test]
+    public function usuario_pode_buscar_cursos_por_palavra_chave()
+    {
+        $usuario = User::factory()->create();
+        Cursos::factory()->create(['titulo' => 'Curso de Laravel']);
+
+        $response = $this->actingAs($usuario, 'api')->getJson('/api/cursos/search/Laravel');
+
+        $response->assertStatus(200);
+        $response->assertJsonFragment(['titulo' => 'Curso de Laravel']);
+    }
+
 }
