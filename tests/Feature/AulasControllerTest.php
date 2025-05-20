@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\UserFunction;
 use App\Models\User;
 use App\Models\Cursos;
 use App\Models\Aulas;
@@ -25,6 +26,8 @@ class AulasControllerTest extends TestCase
             'password' => bcrypt('password')
         ]);
         $this->token = JWTAuth::fromUser($this->user);
+        $functionAdmin = UserFunction::create(['user_id' => $this->user->id, 'function' => 'admin']);
+        $this->user->functions()->save($functionAdmin);
         $this->curso = Cursos::factory()->create();
     }
 

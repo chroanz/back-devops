@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreLeituraRequest extends FormRequest
 {
@@ -23,7 +24,7 @@ class StoreLeituraRequest extends FormRequest
     {
         return [
             'curso_id' => 'required',
-            'sequencia' => 'required|integer',
+            'sequencia' => ['required', Rule::unique('leituras', 'sequencia')->where('curso_id', $this->input('curso_id'))],
             'titulo' => 'required|min:10',
             'conteudo' => 'required:min:50'
         ];

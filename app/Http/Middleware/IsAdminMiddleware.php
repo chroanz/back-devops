@@ -19,7 +19,7 @@ class IsAdminMiddleware
         /**
          * @var User $user
          */
-        $user = auth()->user();
+        $user = auth('api')->user();
         if (!$user) {
             return response()->json(['success' => false, 'msg' => 'Usuário não identificado'], Response::HTTP_UNAUTHORIZED);
         }

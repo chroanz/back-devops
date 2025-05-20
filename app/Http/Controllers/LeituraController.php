@@ -61,7 +61,7 @@ class LeituraController extends Controller
     public function destroy(Leitura $leitura)
     {
         $leitura->delete();
-        return response()->json(null, 204);
+        return response()->json(['msg' => 'Leitura apagada com sucesso'], 200);
     }
 
     public function marcarVisto(Leitura $leitura){

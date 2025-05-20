@@ -14,7 +14,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 
-class UserController extends Controller 
+class UserController extends Controller
 {
     protected User $user;
     protected UserFunction $uf;
@@ -54,7 +54,7 @@ class UserController extends Controller
             'token_type' => 'bearer',
             'expires_in' => auth('api')->factory()->getTTL() * 60
         ]);
-        
+
     }
 
     public function logout()
@@ -83,26 +83,26 @@ class UserController extends Controller
                 'email.required' => 'O campo e-mail é obrigatório.',
                 'email.email' => 'Informe um e-mail válido.',
                 'email.unique' => 'Este e-mail já está cadastrado.',
-    
+
                 'name.required' => 'O campo nome é obrigatório.',
                 'name.min' => 'O nome deve ter no mínimo 5 caracteres.',
                 'name.max' => 'O nome deve ter no máximo 50 caracteres.',
-    
+
                 'password.required' => 'O campo senha é obrigatório.',
                 'password.min' => 'A senha deve conter no mínimo 5 caracteres.'
             ];
-    
+
             $request->validate($rules, $feedback);
-    
+
             $user = $this->user->create($request->all());
-    
+
             if ($user && $this->uf->create([
                 'user_id' => $user->id,
                 'function' => 'default'
             ])) {
                 return response()->json(["msg" => "Usuário criado com sucesso."], 201);
             }
-    
+
         } catch (ValidationException $e) {
             return response()->json([
                 "errors" => $e->errors()
@@ -302,7 +302,7 @@ class UserController extends Controller
 
     public function me()
     {
-        return response()->json(auth()->user());
+        return response()->json(auth('api')->user());
     }
 
 
@@ -310,26 +310,26 @@ class UserController extends Controller
     public function meusCursos()
     {
         $user = auth('api')->user();
-    
+
         $cursos = $user->cursos()->with(['aulas', 'leituras'])->get();
-    
+
         $result = $cursos->map(function ($curso) use ($user) {
             $aulasTotal = $curso->aulas->count();
             $leiturasTotal = $curso->leituras->count();
-    
+
             $aulasVistas = $curso->aulas->filter(function ($aula) use ($user) {
                 return $aula->users->contains($user->id);
             })->count();
-    
+
             $leiturasVistas = $curso->leituras->filter(function ($leitura) use ($user) {
                 return $leitura->users->contains($user->id);
             })->count();
-    
+
             $total = $aulasTotal + $leiturasTotal;
             $vistos = $aulasVistas + $leiturasVistas;
-    
+
             $percentual = $total > 0 ? round(($vistos / $total) * 100, 2) : 0;
-    
+
             return [
                 'id' => $curso->id,
                 'titulo' => $curso->titulo,
@@ -339,9 +339,9 @@ class UserController extends Controller
                 'percentual_conclusao' => $percentual,
             ];
         });
-    
+
         return response()->json($result);
     }
-    
+
 
 }

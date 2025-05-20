@@ -45,21 +45,21 @@ class LeiturasCrudTest extends TestCase
     public function leitura_deve_ser_criada_com_dados_validos()
     {
 
-        $response = $this->actingAs($this->userAdmin, 'sanctum')->postJson('/api/leituras', [
-            'titulo' => 'Leitura A',
-            'descricao' => 'Descrição da leitura',
+        $response = $this->actingAs($this->userAdmin, 'api')->postJson('/api/leituras', [
+            'titulo' => 'Leitura Para Teste',
+            'conteudo' => 'Descrição da leitura',
             'sequencia' => 1,
             'curso_id' => $this->curso->id
         ]);
 
         $response->assertStatus(201);
-        $this->assertDatabaseHas('leituras', ['titulo' => 'Leitura A']);
+        $this->assertDatabaseHas('leituras', ['titulo' => 'Leitura Para Teste']);
     }
 
     #[Test]
     public function leitura_deve_falhar_sem_vinculo_de_curso()
     {
-        $this->actingAs($this->userAdmin, 'sanctum');
+        $this->actingAs($this->userAdmin, 'api');
 
         $response = $this->postJson('/api/leituras', [
             'titulo' => 'Leitura sem curso',
@@ -74,7 +74,7 @@ class LeiturasCrudTest extends TestCase
     #[Test]
     public function leitura_deve_falhar_com_sequencial_repetido_no_mesmo_curso()
     {
-        $this->actingAs($this->userAdmin, 'sanctum');
+        $this->actingAs($this->userAdmin, 'api');
 
         Leitura::factory()->create([
             'curso_id' => $this->curso->id,
@@ -96,7 +96,7 @@ class LeiturasCrudTest extends TestCase
     public function apenas_administradores_podem_criar_leituras()
     {
 
-        $response = $this->actingAs($this->userDefault, 'sanctum')->postJson('/api/leituras', [
+        $response = $this->actingAs($this->userDefault, 'api')->postJson('/api/leituras', [
             'titulo' => 'Leitura de Teste',
             'conteudo' => 'Conteudo de teste de leitura',
             'sequencia' => 1,
@@ -111,7 +111,7 @@ class LeiturasCrudTest extends TestCase
     {
         $leitura = Leitura::factory()->create();
 
-        $response = $this->actingAs($this->userDefault, 'sanctum')->putJson("/api/leituras/{$leitura->id}", [
+        $response = $this->actingAs($this->userDefault, 'api')->putJson("/api/leituras/{$leitura->id}", [
             'titulo' => 'Atualizado',
             'descricao' => 'Desc Atualizada',
             'sequencia' => 99,
@@ -124,7 +124,7 @@ class LeiturasCrudTest extends TestCase
     public function apenas_administradores_podem_apagar_leituras()
     {
         $leitura = Leitura::factory()->create();
-        $response = $this->actingAs($this->userDefault, 'sanctum')->deleteJson("/api/leituras/{$leitura->id}");
+        $response = $this->actingAs($this->userDefault, 'api')->deleteJson("/api/leituras/{$leitura->id}");
 
         $response->assertStatus(403);
     }
@@ -132,7 +132,7 @@ class LeiturasCrudTest extends TestCase
     #[Test]
     public function leitura_deve_ser_atualizada_com_dados_validos()
     {
-        $this->actingAs($this->userAdmin, 'sanctum');
+        $this->actingAs($this->userAdmin, 'api');
 
         $leitura = Leitura::factory()->create();
 
@@ -149,7 +149,7 @@ class LeiturasCrudTest extends TestCase
     #[Test]
     public function leitura_deve_ser_deletada_com_sucesso()
     {
-        $this->actingAs($this->userAdmin, 'sanctum');
+        $this->actingAs($this->userAdmin, 'api');
 
         $leitura = Leitura::factory()->create();
 

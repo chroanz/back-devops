@@ -51,7 +51,7 @@ class AulasCrudTest extends TestCase
             'curso_id' => $this->curso->id,
         ];
 
-        $response = $this->actingAs($this->userAdmin, 'sanctum')->postJson('/api/aulas/create', $data);
+        $response = $this->actingAs($this->userAdmin, 'api')->postJson('/api/aulas/create', $data);
 
         $response->assertStatus(201); // Criado com sucesso
         $this->assertDatabaseHas('aulas', $data); // Verifica se a aula foi inserida na base
@@ -68,7 +68,7 @@ class AulasCrudTest extends TestCase
             'curso_id' => null, // Curso não fornecido
         ];
 
-        $response = $this->actingAs($this->userAdmin, 'sanctum')->postJson('/api/aulas/create', $data);
+        $response = $this->actingAs($this->userAdmin, 'api')->postJson('/api/aulas/create', $data);
 
         $response->assertStatus(422); // Falha na validação
         $response->assertJsonValidationErrors('curso_id'); // Verifica erro na validação do campo curso_id
@@ -95,7 +95,7 @@ class AulasCrudTest extends TestCase
             'curso_id' => $this->curso->id,
         ];
 
-        $response = $this->actingAs($this->userAdmin, 'sanctum')->postJson('/api/aulas/create', $data);
+        $response = $this->actingAs($this->userAdmin, 'api')->postJson('/api/aulas/create', $data);
 
         $response->assertStatus(422); // Falha na validação
         $response->assertJsonValidationErrors('sequencia'); // Verifica erro na validação do campo sequencia
@@ -121,7 +121,7 @@ class AulasCrudTest extends TestCase
             'curso_id' => $this->curso->id,
         ];
 
-        $response = $this->actingAs($this->userAdmin, 'sanctum')->putJson("/api/aulas/update/{$aula->id}", $data);
+        $response = $this->actingAs($this->userAdmin, 'api')->putJson("/api/aulas/update/{$aula->id}", $data);
 
         $response->assertStatus(200); // Atualizado com sucesso
         $this->assertDatabaseHas('aulas', $data); // Verifica se a aula foi atualizada na base
@@ -138,7 +138,7 @@ class AulasCrudTest extends TestCase
             'curso_id' => $this->curso->id,
         ];
 
-        $response = $this->actingAs($this->userDefault, 'sanctum')->postJson('/api/aulas/create', $data);
+        $response = $this->actingAs($this->userDefault, 'api')->postJson('/api/aulas/create', $data);
 
         $response->assertStatus(403); // Acesso negado para usuário não admin
     }
@@ -162,7 +162,7 @@ class AulasCrudTest extends TestCase
             'curso_id' => $this->curso->id,
         ];
 
-        $response = $this->actingAs($this->userDefault, 'sanctum')->putJson("/api/aulas/update/{$aula->id}", $data);
+        $response = $this->actingAs($this->userDefault, 'api')->putJson("/api/aulas/update/{$aula->id}", $data);
 
         $response->assertStatus(403); // Acesso negado para usuário não admin
     }
@@ -178,7 +178,7 @@ class AulasCrudTest extends TestCase
             'curso_id' => $this->curso->id,
         ]);
 
-        $response = $this->actingAs($this->userDefault, 'sanctum')->deleteJson("/api/aulas/delete/{$aula->id}");
+        $response = $this->actingAs($this->userDefault, 'api')->deleteJson("/api/aulas/delete/{$aula->id}");
 
         $response->assertStatus(403); // Acesso negado para usuário não admin
     }
@@ -193,7 +193,7 @@ class AulasCrudTest extends TestCase
             'curso_id' => $this->curso->id,
         ]);
 
-        $response = $this->actingAs($this->userAdmin, 'sanctum')->deleteJson("/api/aulas/delete/{$aula->id}");
+        $response = $this->actingAs($this->userAdmin, 'api')->deleteJson("/api/aulas/delete/{$aula->id}");
 
         $response->assertStatus(200); // Deletado com sucesso
         $this->assertDatabaseMissing('aulas', ['id' => $aula->id]); // Verifica se a aula foi removida da base
