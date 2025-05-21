@@ -190,7 +190,7 @@ class UserController extends Controller
     {
        $user = $this->user->find($id);
 
-        if (!$user) {
+        if (!$user || auth("api")->user() !== $user) {
             return response()->json(["msg" => "Recurso não encontrado."], 404);
         }
 
