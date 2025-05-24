@@ -108,45 +108,46 @@ class UserControllerTest extends TestCase
     }
 
 
-    #[\PHPUnit\Framework\Attributes\Test]
+   #[\PHPUnit\Framework\Attributes\Test]
     public function usuario_pode_ser_atualizado_com_dados_validos(): void
     {
         $usuario = User::factory()->create();
+        $this->actingAs($usuario, 'api');
 
         $response = $this->putJson("/api/user/{$usuario->id}", [
-            'name' => 'Lucas Atualizado',
-            'email' => 'lucasatualizado@example.com',
+            'name'     => 'Lucas Atualizado',
+            'email'    => 'lucasatualizado@example.com',
             'password' => 'novasenha123',
         ]);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('users', [
-            'id' => $usuario->id,
-            'name' => 'Lucas Atualizado',
+            'id'    => $usuario->id,
+            'name'  => 'Lucas Atualizado',
             'email' => 'lucasatualizado@example.com',
         ]);
     }
-    
+
     #[\PHPUnit\Framework\Attributes\Test]
     public function nao_pode_atualizar_usuario_com_email_ja_existente(): void
     {
-        $usuario1 = User::factory()->create([
-            'email' => 'email1@example.com',
-        ]);
+        // Cria dois usuários
+        $usuario1 = User::factory()->create(['email' => 'email1@example.com']);
+        $usuario2 = User::factory()->create(['email' => 'email2@example.com']);
 
-        $usuario2 = User::factory()->create([
-            'email' => 'email2@example.com',
-        ]);
+        // Autentica como usuario2 no guard 'api'
+        $this->actingAs($usuario2, 'api');
 
         $response = $this->putJson("/api/user/{$usuario2->id}", [
-            'name' => 'Novo Nome',
-            'email' => 'email1@example.com', // email já existente
+            'name'     => 'Novo Nome',
+            'email'    => 'email1@example.com',
             'password' => 'novasenha123',
         ]);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors('email');
     }
+
 
 
 
