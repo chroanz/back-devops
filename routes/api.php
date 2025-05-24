@@ -52,6 +52,7 @@ Route::prefix('leituras')->group(function () {
 
 
 Route::post('login', [UserController::class, 'login'])->name('login');
+Route::post('logout', [UserController::class, 'logout'])->name('logout');
 
 Route::get('/test-env', function () {
     return env('DB_DATABASE');
