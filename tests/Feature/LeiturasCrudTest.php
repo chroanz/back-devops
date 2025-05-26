@@ -158,4 +158,20 @@ class LeiturasCrudTest extends TestCase
         $response->assertStatus(200);
         $this->assertDatabaseMissing('leituras', ['id' => $leitura->id]);
     }
+
+    #[Test]
+    public function conteudo_leitura_so_pode_ser_acessada_por_usuario_matriculado(){
+        $leitura = Leitura::factory()->create();
+
+        $curso_id = $leitura->curso->id;
+        
+        $this->actingAs($this->userDefault, 'api')->postJson("/api/cursos/subscribe/{$curso_id}");
+        
+        $response = $this->actingAs($this->userAdmin, 'api')->getJson("/api/leituras/{$leitura->id}");
+        
+        $response->assertStatus(403);
+    }
+
+    
+
 }
