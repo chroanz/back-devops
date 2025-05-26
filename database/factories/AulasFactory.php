@@ -30,7 +30,7 @@ class AulasFactory extends Factory
         return [
             'curso_id' => $selectedCourse,
             'sequencia' => $sequence,
-            'titulo' => fake()->sentence(),
+            'titulo' => 'Aula ' . fake()->words(2, true), 
             'duracaoMinutos' => fake()->randomNumber(2),
             'videoUrl' => fake()->url(),
         ];
