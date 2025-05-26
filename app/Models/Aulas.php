@@ -20,6 +20,9 @@ class Aulas extends Model
         'curso_id',
     ];
 
+    protected $hidden = [
+        'videoUrl'
+    ];
 
     public function curso(): BelongsTo{
         return $this->belongsTo(Cursos::class, 'curso_id');
