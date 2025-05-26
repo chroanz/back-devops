@@ -34,7 +34,7 @@ Route::prefix('aulas')->group(function () {
     Route::post('/create', [AulasController::class, 'store'])->middleware(['auth:api','isAdmin']);
     Route::get('/show/{aulas}', [AulasController::class, 'show'])->middleware('auth:api');
     Route::put('/update/{aulas}', [AulasController::class, 'update'])->middleware(['auth:api','isAdmin']);
-    Route::delete('/delete/{aulas}', [AulasController::class, 'destroy'])->middleware();
+    Route::delete('/delete/{aula}', [AulasController::class, 'destroy'])->middleware(['auth:api', 'isAdmin']);
     Route::get('/search/{search}', [AulasController::class, 'search']);
     Route::patch('/{aulas}/visto', [AulasController::class, 'marcarVisto'])->middleware(['auth:api']);
 });
