@@ -36,12 +36,14 @@ class LeituraController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Leitura $leitura)
+
+     
+    public function show(Leitura $leitura) //recebe um objeto leitura
     {
-        $user = auth('api')->user();
+        
         $leitura->visto = $leitura->users()->where('user_id', $user->id)->exists();
         return response()->json($leitura->makeVisible('conteudo'));
-    }
+    } 
 
 
     /**

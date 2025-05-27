@@ -52,19 +52,30 @@ class AulasController extends Controller
         }
     }
 
-    public function show(string $id)
-    {
-        try {
-            $aula = $this->aulas->find($id);
+  
+public function show(string $id) // recebe o id da aula a ser buscada
+{
+    try {
+        $aula = $this->aulas->find($id); // busca a aula pelo id
+        if (empty($aula)) {
+            return response()->json(['error' => 'Aula não encontrada.'], 404);
+        } //se n achar a aula, dá erro 404
 
-            return !empty($aula)
-                ? response()->json($aula, 200)
-                : response()->json(['error' => 'Aula não encontrada.'], 404);
-        } catch (Exception $e) {
-            return response()->json(['error' => 'Erro ao buscar aula.', 'details' => $e->getMessage()], 500);
-        }
-    }
+        $user = auth('api')->user(); // pega o usuário autenticado
+        $cursos = $user->cursos->pluck('id'); //pega apenas os cursos em que o usuário está matriculado
+        $matriculado = $cursos->contains($aula->curso->id); //serve para ver se a pessoa está matriculada no curso que tem a aula
 
+        if (!$matriculado) {
+            return response()->json(['message' => 'Você não está matriculado neste curso'], 403);
+        } // se o a pessoa não estiver matriculada, dá erro 403
+
+        $aula->visto = $aula->users()->where('user_id', $user->id)->exists(); // vê se a aula foi marcada como vista
+
+        return response()->json($aula, 200); // se foi visto, o status pe 200
+    } catch (Exception $e) {
+        return response()->json(['error' => 'Erro ao buscar aula.', 'details' => $e->getMessage()], 500);
+    } // se der qualquer outro erro, retorna erro 500
+}
     public function search(string $search)
     {
         try {

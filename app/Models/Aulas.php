@@ -20,7 +20,7 @@ class Aulas extends Model
         'curso_id',
     ];
 
-
+//aqui tbm, curso
     public function curso(): BelongsTo{
         return $this->belongsTo(Cursos::class, 'curso_id');
     }

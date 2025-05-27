@@ -68,6 +68,7 @@ class User extends Authenticatable implements JWTSubject
         return $this->functions()->where('function', 'default')->exists();
     }
 
+    //usuários que estão matriculados em cursos. Quais os usuários estão matriculados.
     public function cursos(): BelongsToMany{
         return $this->belongsToMany(Cursos::class, 'cursos_user', 'user_id', 'cursos_id')->withTimestamps();
     }

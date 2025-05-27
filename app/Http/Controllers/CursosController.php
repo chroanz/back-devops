@@ -107,35 +107,49 @@ class CursosController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        $user = auth('api')->user();
-        $curso = $this->cursos->with([
-            'aulas' => function ($query) use ($user) {
-                $query->with(['users' => function ($q) use ($user) {
-                    $q->where('user_id', $user?->id);
-                }])->orderBy('sequencia');
-            },
-            'leituras' => function ($query) use ($user) {
-                $query->with(['users' => function ($q) use ($user) {
-                    $q->where('user_id', $user?->id);
-                }])->orderBy('sequencia');
-            }
-        ])->find($id);
-        $curso->aulas->each(function ($aula) {
-            $aula->visto = $aula->users->isNotEmpty();
-            unset($aula->users);
-        });
 
-        $curso->leituras->each(function ($leitura) {
-            $leitura->visto = $leitura->users->isNotEmpty();
-            unset($leitura->users);
-        });
+public function show(string $id)
+{
+    $user = auth('api')->user();
 
-        return !empty($curso)
-            ? response()->json($curso)
-            : response()->json(status: 404);
+    // Verifica se o usuário está matriculado neste curso
+    $cursosIds = $user->cursos->pluck('id');
+    $matriculado = $cursosIds->contains($id);
+
+    if (!$matriculado) {
+        // Retorna erro 403 se não estiver matriculado (API padrão)
+        return response()->json(['message' => 'Você não está matriculado neste curso'], 403);
     }
+
+    $curso = $this->cursos->with([
+        'aulas' => function ($query) use ($user) {
+            $query->with(['users' => function ($q) use ($user) {
+                $q->where('user_id', $user?->id);
+            }])->orderBy('sequencia');
+        },
+        'leituras' => function ($query) use ($user) {
+            $query->with(['users' => function ($q) use ($user) {
+                $q->where('user_id', $user?->id);
+            }])->orderBy('sequencia');
+        }
+    ])->find($id);
+
+    if (empty($curso)) {
+        return response()->json(status: 404);
+    }
+
+    $curso->aulas->each(function ($aula) {
+        $aula->visto = $aula->users->isNotEmpty();
+        unset($aula->users);
+    });
+
+    $curso->leituras->each(function ($leitura) {
+        $leitura->visto = $leitura->users->isNotEmpty();
+        unset($leitura->users);
+    });
+
+    return response()->json($curso);
+}
 
     public function search(string $search)
     {
