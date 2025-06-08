@@ -37,7 +37,7 @@ class CursosController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'titulo' => 'required|string|max:255',
+            'titulo' => 'required|string|max:255|min:10',
             'descricao' => 'required|string',
             'categoria' => 'required|string|max:255',
             'capa' => 'nullable|string'
@@ -162,7 +162,7 @@ class CursosController extends Controller
         $requestData = $request->all();
 
         $validated = $request->validate([
-            'titulo' => 'sometimes|required|string|max:255',
+            'titulo' => 'sometimes|required|string|max:255|min:10',
             'descricao' => 'sometimes|required|string',
             'categoria' => 'sometimes|required|string|max:255',
         ]);

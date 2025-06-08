@@ -33,7 +33,7 @@ class AulasController extends Controller
         try {
             $validated = $request->validate([
                 'sequencia' => 'required|integer',
-                'titulo' => 'required|string|max:255',
+                'titulo' => 'required|string|max:255|min:10',
                 'duracaoMinutos' => 'required|integer',
                 'videoUrl' => 'required|string|max:255',
                 'curso_id' => 'required|exists:cursos,id',
@@ -44,7 +44,7 @@ class AulasController extends Controller
 
             if ($this->aulas::where('curso_id', $validated['curso_id'])
                 ->where('sequencia', $validated['sequencia'])->exists()) {
-                
+
                 $validator->errors()->add('sequencia', 'A sequência já está sendo usada neste curso.');
 
                 throw new ValidationException($validator);
@@ -112,7 +112,7 @@ class AulasController extends Controller
 
             $validated = $request->validate([
                 'sequencia' => 'sometimes|required|integer',
-                'titulo' => 'sometimes|required|string|max:255',
+                'titulo' => 'sometimes|required|string|max:255|min:10',
                 'duracaoMinutos' => 'sometimes|required|integer',
                 'videoUrl' => 'sometimes|required|string|max:255',
                 'curso_id' => 'sometimes|required|exists:cursos,id',
