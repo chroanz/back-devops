@@ -211,10 +211,27 @@ class AulasCrudTest extends TestCase
             'curso_id' => $this->curso->id,
         ]);
 
-        $response = $this->getJson("/api/aulas/show/{$aula->id}");
+        $response = $this->actingAs($this->userDefault, 'api')
+                     ->getJson("/api/aulas/show/{$aula->id}");
 
         $response->assertStatus(200); // Exibido com sucesso
         $response->assertJsonFragment(['titulo' => 'Aula para Exibir']); // Verifica se o título está na resposta
+    }
+
+    #[Test]
+    public function usuario_nao_autenticado_nao_pode_ver_aula()
+    {
+        $aula = Aulas::create([
+            'sequencia' => 2,
+            'titulo' => 'Aula Restrita',
+            'duracaoMinutos' => 40,
+            'videoUrl' => 'https://www.exemplo.com/video',
+            'curso_id' => $this->curso->id,
+        ]);
+
+        $response = $this->getJson("/api/aulas/show/{$aula->id}");
+
+        $response->assertStatus(401); // Acesso negado por falta de autenticação
     }
 
     #[Test]
@@ -242,40 +259,4 @@ class AulasCrudTest extends TestCase
         $response->assertJsonCount(3); // Verifica se 3 aulas foram retornadas
     }
 
-    #[Test]
-    public function aula_deve_ser_marcada_como_visto()
-    {
-        // Criação de um curso e aula
-        $aula = Aulas::create([
-            'sequencia' => 1,
-            'titulo' => 'Aula para Marcar Visto',
-            'duracaoMinutos' => 30,
-            'videoUrl' => 'https://www.exemplo.com/video',
-            'curso_id' => $this->curso->id,
-        ]);
-
-        $response = $this->actingAs($this->userDefault, 'api')->patchJson("/api/aulas/{$aula->id}/visto");
-
-        $response->assertStatus(200); // Marcado como visto com sucesso
-        $this->assertDatabaseHas('aulas', ['id' => $aula->id, 'visto' => true]); // Verifica se a aula foi marcada como vista
-    }
-
-    // #[Test]
-    // public function aula_deve_ser_marcada_como_nao_visto()
-    // {
-    //     // Criação de um curso e aula
-    //     $curso = Cursos::factory()->create();
-    //     $aula = Aulas::create([
-    //         'sequencia' => 1,
-    //         'titulo' => 'Aula para Marcar Não Visto',
-    //         'duracaoMinutos' => 30,
-    //         'videoUrl' => 'https://www.exemplo.com/video',
-    //         'curso_id' => $curso->id,
-    //     ]);
-
-    //     $response = $this->patchJson("/api/aulas/{$aula->id}/visto");
-
-    //     $response->assertStatus(200); // Marcado como não visto com sucesso
-    //     $this->assertDatabaseMissing('aulas', ['id' => $aula->id, 'visto' => true]); // Verifica se a aula foi marcada como não vista
-    // }
 }

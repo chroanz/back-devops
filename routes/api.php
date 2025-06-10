@@ -34,7 +34,7 @@ Route::prefix('aulas')->group(function () {
     Route::post('/create', [AulasController::class, 'store'])->middleware(['auth:api','isAdmin']);
     Route::get('/show/{aulas}', [AulasController::class, 'show'])->middleware('auth:api');
     Route::put('/update/{aulas}', [AulasController::class, 'update'])->middleware(['auth:api','isAdmin']);
-    Route::delete('/delete/{aulas}', [AulasController::class, 'destroy'])->middleware();
+    Route::delete('/delete/{aula}', [AulasController::class, 'destroy'])->middleware(['auth:api', 'isAdmin']);
     Route::get('/search/{search}', [AulasController::class, 'search']);
     Route::patch('/{aulas}/visto', [AulasController::class, 'marcarVisto'])->middleware(['auth:api']);
 });
@@ -52,6 +52,7 @@ Route::prefix('leituras')->group(function () {
 
 
 Route::post('login', [UserController::class, 'login'])->name('login');
+Route::post('logout', [UserController::class, 'logout'])->name('logout');
 
 Route::get('/test-env', function () {
     return env('DB_DATABASE');

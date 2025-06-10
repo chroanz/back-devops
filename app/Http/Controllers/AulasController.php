@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Exception;
 use DateTime;
@@ -31,11 +33,22 @@ class AulasController extends Controller
         try {
             $validated = $request->validate([
                 'sequencia' => 'required|integer',
-                'titulo' => 'required|string|max:255',
+                'titulo' => 'required|string|max:255|min:10',
                 'duracaoMinutos' => 'required|integer',
                 'videoUrl' => 'required|string|max:255',
                 'curso_id' => 'required|exists:cursos,id',
             ]);
+
+            // Validação manual da unicidade da sequência no curso usando Validator
+            $validator = Validator::make($validated, []);
+
+            if ($this->aulas::where('curso_id', $validated['curso_id'])
+                ->where('sequencia', $validated['sequencia'])->exists()) {
+
+                $validator->errors()->add('sequencia', 'A sequência já está sendo usada neste curso.');
+
+                throw new ValidationException($validator);
+            }
 
             $aula = $this->aulas::create($validated);
 
@@ -47,8 +60,16 @@ class AulasController extends Controller
             }
 
             return response()->json(['error' => 'Erro ao criar aula.'], 500);
-        } catch (Exception $e) {
-            return response()->json(['error' => 'Erro ao processar a solicitação.', 'details' => $e->getMessage()], 500);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Erro de validação.',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Erro ao processar a solicitação.',
+                'details' => $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -58,7 +79,7 @@ class AulasController extends Controller
             $aula = $this->aulas->find($id);
 
             return !empty($aula)
-                ? response()->json($aula, 200)
+                ? response()->json($aula->makeVisible('videoUrl'), 200)
                 : response()->json(['error' => 'Aula não encontrada.'], 404);
         } catch (Exception $e) {
             return response()->json(['error' => 'Erro ao buscar aula.', 'details' => $e->getMessage()], 500);
@@ -91,7 +112,7 @@ class AulasController extends Controller
 
             $validated = $request->validate([
                 'sequencia' => 'sometimes|required|integer',
-                'titulo' => 'sometimes|required|string|max:255',
+                'titulo' => 'sometimes|required|string|max:255|min:10',
                 'duracaoMinutos' => 'sometimes|required|integer',
                 'videoUrl' => 'sometimes|required|string|max:255',
                 'curso_id' => 'sometimes|required|exists:cursos,id',
@@ -117,17 +138,21 @@ class AulasController extends Controller
                 return response()->json(['error' => 'Aula não encontrada.'], 404);
             }
 
-            dd($aula); // Verifique se o modelo está carregado corretamente
-
             $aula->delete();
+
             return response()->json(['message' => 'Aula removida com sucesso.'], 200);
         } catch (\Illuminate\Database\QueryException $e) {
-            return response()->json(['error' => 'Erro ao remover aula devido a restrições de banco de dados.', 'details' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'Erro ao remover aula devido a restrições de banco de dados.',
+                'details' => $e->getMessage()
+            ], 500);
         } catch (Exception $e) {
-            return response()->json(['error' => 'Erro ao remover aula.', 'details' => $e->getMessage()], 500);
+            return response()->json([
+                'error' => 'Erro ao remover aula.',
+                'details' => $e->getMessage()
+            ], 500);
         }
     }
-
 
     public function marcarVisto(Aulas $aulas)
     {

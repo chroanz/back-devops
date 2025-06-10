@@ -190,7 +190,8 @@ class UserController extends Controller
     {
        $user = $this->user->find($id);
 
-        if (!$user) {
+    //    dd(auth("api")->user());
+        if (!$user || auth("api")->user()->id != $id) {
             return response()->json(["msg" => "Recurso não encontrado."], 404);
         }
 
@@ -314,7 +315,19 @@ class UserController extends Controller
 
     public function me()
     {
-        return response()->json(auth('api')->user());
+        $user = auth('api')->user();
+
+        // verifica se é admin
+        $isAdmin = $this->uf::where('user_id', $user->id)
+                 ->value('function') === 'admin';
+
+        // retorna o usuário com isAdmin dentro de "user"
+        return response()->json([
+            'user' => array_merge(
+                $user->toArray(),
+                ['isAdmin' => $isAdmin]
+            )
+        ], 200);
     }
 
 
