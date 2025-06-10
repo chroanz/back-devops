@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\HasApiTokens;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -40,6 +41,8 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
 
+    protected $appends = ['isAdmin'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -68,7 +71,8 @@ class User extends Authenticatable implements JWTSubject
         return $this->functions()->where('function', 'default')->exists();
     }
 
-    public function cursos(): BelongsToMany{
+    public function cursos(): BelongsToMany
+    {
         return $this->belongsToMany(Cursos::class, 'cursos_user', 'user_id', 'cursos_id')->withTimestamps();
     }
 
@@ -86,5 +90,12 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    //Adiciona atributo se é admin
+    public function getIsAdminAttribute(): bool
+    {
+        Log::debug("Verificando se usuário {$this->name} é admin");
+        return $this->isAdmin();
     }
 }

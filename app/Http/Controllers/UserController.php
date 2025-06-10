@@ -316,18 +316,7 @@ class UserController extends Controller
     public function me()
     {
         $user = auth('api')->user();
-
-        // verifica se é admin
-        $isAdmin = $this->uf::where('user_id', $user->id)
-                 ->value('function') === 'admin';
-
-        // retorna o usuário com isAdmin dentro de "user"
-        return response()->json([
-            'user' => array_merge(
-                $user->toArray(),
-                ['isAdmin' => $isAdmin]
-            )
-        ], 200);
+        return response()->json($user);
     }
 
 
