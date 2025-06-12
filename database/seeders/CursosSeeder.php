@@ -18,7 +18,7 @@ class CursosSeeder extends Seeder
                 'titulo' => 'Curso de Libras',
                 'capa' => 'imagens/cursos/capas/curso_libras.png',
                 'descricao' => 'Aprenda a Língua Brasileira de Sinais para comunicação inclusiva.',
-                'categoria' => 'Deficiência Visual',
+                'categoria' => 'Deficiência Auditiva',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
